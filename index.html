@@ -1647,11 +1647,182 @@ function autoSave() {
       localStorage.setItem(key, JSON.stringify(buildJSON()));
       localStorage.setItem('qre_last_key', key);
       const ind = document.getElementById('saveInd');
-      ind.textContent = '● saved';
+      ind.textContent = '● auto-saved';
       ind.className = 'save-indicator saved';
       setTimeout(() => { ind.textContent = '● auto-saved'; }, 1500);
     } catch(e) {}
   }, 800);
+}
+
+// ─── RESTORE FROM LOCALSTORAGE ────────────────────────────────────────────────
+function restoreForm() {
+  try {
+    const key = localStorage.getItem('qre_last_key');
+    if (!key) return;
+    const raw = localStorage.getItem(key);
+    if (!raw) return;
+    const d = JSON.parse(raw);
+
+    // Metadata
+    if (d.metadata) {
+      setVal('ad_id', d.metadata.ad_id);
+      setVal('coder_name', d.metadata.coder_name);
+      setVal('code_date', d.metadata.date);
+    }
+
+    // Q1 elements
+    if (d.q1_unexpected_elements && d.q1_unexpected_elements.length > 0) {
+      d.q1_unexpected_elements.forEach(el => {
+        addElement();
+        const id = elementCount;
+        setVal('el' + id + '-desc', el.description);
+        setVal('el' + id + '-ts', el.timestamp);
+        if (el.humorous) setRadio('el' + id + '-hum', el.humorous);
+        if (el.severity) setRadio('el' + id + '-sev', el.severity);
+        if (el.pivotal) setRadio('el' + id + '-piv', el.pivotal);
+        if (Array.isArray(el.classification)) {
+          el.classification.forEach(c => setCheckbox('el' + id + '-cls', c));
+        }
+      });
+      updatePivotalRows();
+      updateQ4Context();
+    }
+
+    // All scalar fields
+    const radios = {
+      q5:'q5',q5a:'q5a',q6:'q6',q11:'q11',q12:'q12',q13:'q13',
+      q14:'q14',q16:'q16',q17:'q17',q19:'q19',q20:'q20',q22:'q22',
+      q29:'q29',q33:'q33',q34:'q34',q35a:'q35a',q39:'q39',
+      q40:'q40',q41:'q41',q42:'q42',q44:'q44',q47:'q47',q48:'q48',
+      q49:'q49',q50:'q50',
+    };
+    const radioMap = {
+      q5: d.q5_character_structure?.value, q5a: d.q5a_protagonist_clarity?.value,
+      q6: d.q6_protagonist_goal?.value, q11: d.q11_resolution_type?.value,
+      q12: d.q12_resolution_locus?.value, q13: d.q13_tone?.value,
+      q14: d.q14_brand_role?.value, q16: d.q16_brand_swap_a?.value,
+      q17: d.q17_brand_swap_b?.value, q19: d.q19_communication_mode?.value,
+      q20: d.q20_verbal_speaker?.value, q22: d.q22_prior_knowledge_requirement?.value,
+      q29: d.q29_message_clarity?.value, q33: d.q33_group_breadth?.value,
+      q34: d.q34_group_framing?.value, q35a: d.q35a_brand_thinking_moment?.value,
+      q39: d.q39_benefit_framing?.value, q40: d.q40_cta?.value,
+      q41: d.q41_pov?.value, q42: d.q42_pov_boldness?.value,
+      q44: d.q44_lifestyle_cues?.value, q47: d.q47_minority_audience?.value,
+      q48: d.q48_minority_accessibility?.value, q49: d.q49_dominant_strategy?.value,
+      q50: d.q50_brand_product_focus?.value,
+    };
+    Object.entries(radioMap).forEach(([name, val]) => { if (val) setRadio(name, val); });
+
+    // Scales
+    const scaleMap = {
+      q8: d.q8_obstacle?.score, q9: d.q9_viewer_care?.score,
+      q10: d.q10_peak_moment?.score, q10a: d.q10a_emotional_peak?.score,
+      q24: d.q24_cultural_reference_load?.score, q25: d.q25_visual_unusualness?.score,
+      q26: d.q26_visual_category_difference?.score, q30: d.q30_audience_insight?.score,
+      q30a: d.q30a_target_specificity?.score, q31: d.q31_in_group?.score,
+      q32: d.q32_out_group?.score, q35: d.q35_interpretive_work?.score,
+      q37: d.q37_benefit_clarity?.score, q43: d.q43_pov_centrality?.score,
+    };
+    Object.entries(scaleMap).forEach(([name, val]) => {
+      if (val != null) setRadio(name, String(val));
+    });
+
+    // Antagonist sub-flag
+    if (d.q8_obstacle?.antagonist_present) setRadio('q8-antag', d.q8_obstacle.antagonist_present);
+
+    // Checkboxes
+    const checkMap = {
+      q4: d.q4_dramatic_tension?.mechanisms, q7: d.q7_stakes?.values,
+      q15: d.q15_brand_narrative_position?.values, q18: d.q18_brand_dimension?.values,
+      q21: d.q21_cultural_elements?.values, q23: d.q23_cultural_reference_type?.values,
+      q28: d.q28_first_5_seconds?.values, q36: d.q36_brand_differentiators?.values,
+      q38: d.q38_benefit_type?.values, q46: d.q46_lifestyle_group_type?.values,
+    };
+    Object.entries(checkMap).forEach(([name, vals]) => {
+      if (Array.isArray(vals)) vals.forEach(v => setCheckbox(name, v));
+    });
+
+    // Evidence textareas
+    const evidMap = {
+      'q4-evid': d.q4_dramatic_tension?.evidence,
+      'q5-evid': d.q5_character_structure?.evidence,
+      'q5a-evid': d.q5a_protagonist_clarity?.evidence,
+      'q6-evid': d.q6_protagonist_goal?.evidence,
+      'q7-evid': d.q7_stakes?.evidence,
+      'q8-evid': d.q8_obstacle?.evidence,
+      'q9-evid': d.q9_viewer_care?.evidence,
+      'q10-evid': d.q10_peak_moment?.evidence,
+      'q10a-evid': d.q10a_emotional_peak?.evidence,
+      'q11-evid': d.q11_resolution_type?.evidence,
+      'q12-evid': d.q12_resolution_locus?.evidence,
+      'q13-evid': d.q13_tone?.evidence,
+      'q14-evid': d.q14_brand_role?.evidence,
+      'q15-evid': d.q15_brand_narrative_position?.evidence,
+      'q16-evid': d.q16_brand_swap_a?.evidence,
+      'q17-evid': d.q17_brand_swap_b?.evidence,
+      'q18-evid': d.q18_brand_dimension?.evidence,
+      'q19-evid': d.q19_communication_mode?.evidence,
+      'q21-evid': d.q21_cultural_elements?.evidence,
+      'q22-evid': d.q22_prior_knowledge_requirement?.evidence,
+      'q23-evid': d.q23_cultural_reference_type?.evidence,
+      'q24-evid': d.q24_cultural_reference_load?.evidence,
+      'q25-evid': d.q25_visual_unusualness?.evidence,
+      'q26-evid': d.q26_visual_category_difference?.evidence,
+      'q28-evid': d.q28_first_5_seconds?.evidence,
+      'q29-evid': d.q29_message_clarity?.evidence,
+      'q30-evid': d.q30_audience_insight?.evidence,
+      'q30a-evid': d.q30a_target_specificity?.evidence,
+      'q31-evid': d.q31_in_group?.evidence,
+      'q32-evid': d.q32_out_group?.evidence,
+      'q33-evid': d.q33_group_breadth?.evidence,
+      'q34-evid': d.q34_group_framing?.evidence,
+      'q35-evid': d.q35_interpretive_work?.evidence,
+      'q35a-evid': d.q35a_brand_thinking_moment?.evidence,
+      'q36-evid': d.q36_brand_differentiators?.evidence,
+      'q37-evid': d.q37_benefit_clarity?.evidence,
+      'q38-evid': d.q38_benefit_type?.evidence,
+      'q39-evid': d.q39_benefit_framing?.evidence,
+      'q40-evid': d.q40_cta?.evidence,
+      'q41-evid': d.q41_pov?.evidence,
+      'q42-evid': d.q42_pov_boldness?.evidence,
+      'q43-evid': d.q43_pov_centrality?.evidence,
+      'q44-evid': d.q44_lifestyle_cues?.evidence,
+      'q46-evid': d.q46_lifestyle_group_type?.evidence,
+      'q47-evid': d.q47_minority_audience?.evidence,
+      'q49-evid': d.q49_dominant_strategy?.evidence,
+      'q50-evid': d.q50_brand_product_focus?.evidence,
+    };
+    Object.entries(evidMap).forEach(([id, val]) => { if (val) setVal(id, val); });
+
+    // Free text
+    setVal('q45-val', d.q45_lifestyle_description);
+    setVal('q13-other-val', d.q13_tone?.other);
+
+    // D2 derivation
+    deriveD2();
+    updateConditionals();
+
+    const ind = document.getElementById('saveInd');
+    ind.textContent = '● restored';
+    ind.className = 'save-indicator saved';
+
+  } catch(e) { console.warn('Restore failed:', e); }
+}
+
+function setVal(id, val) {
+  if (!val) return;
+  const el = document.getElementById(id);
+  if (el) el.value = val;
+}
+function setRadio(name, val) {
+  if (!val) return;
+  const el = document.querySelector(`input[name="${name}"][value="${CSS.escape(val)}"]`);
+  if (el) { el.checked = true; el.closest('.opt')?.classList.add('sel'); }
+}
+function setCheckbox(name, val) {
+  if (!val) return;
+  const el = document.querySelector(`input[name="${name}"][value="${CSS.escape(val)}"]`);
+  if (el) { el.checked = true; el.closest('.opt')?.classList.add('sel'); }
 }
 
 function clearForm() {
@@ -1711,6 +1882,7 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   updateConditionals();
+  restoreForm();
 });
 </script>
 </body>
