@@ -1,0 +1,1716 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>QRE Analytic Reframe v2</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;background:#f1f5f9;color:#1e293b;line-height:1.5;font-size:14px}
+.app-header{background:#1e293b;color:white;padding:14px 24px;position:sticky;top:0;z-index:100;display:flex;align-items:center;justify-content:space-between;gap:16px;box-shadow:0 2px 8px rgba(0,0,0,.2)}
+.app-header h1{font-size:15px;font-weight:600;letter-spacing:-.01em}
+.header-right{display:flex;align-items:center;gap:10px}
+.save-indicator{font-size:11px;color:#64748b;transition:color .4s}
+.save-indicator.saved{color:#34d399}
+.btn{display:inline-flex;align-items:center;gap:5px;padding:7px 14px;border-radius:6px;font-size:12px;font-weight:500;cursor:pointer;border:none;transition:all .15s;font-family:inherit}
+.btn-ghost{background:rgba(255,255,255,.1);color:white;border:1px solid rgba(255,255,255,.2)}
+.btn-ghost:hover{background:rgba(255,255,255,.2)}
+.btn-green{background:#10b981;color:white}
+.btn-green:hover{background:#059669}
+.btn-blue{background:#2563eb;color:white}
+.btn-blue:hover{background:#1d4ed8}
+.container{max-width:820px;margin:0 auto;padding:24px 16px 80px}
+.section-title{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#64748b;padding:28px 0 8px;border-bottom:1px solid #e2e8f0;margin-bottom:14px}
+.card{background:white;border-radius:8px;padding:20px;margin-bottom:2px;border:1px solid #e2e8f0}
+.card.hidden{display:none}
+.card-top{display:flex;gap:10px;margin-bottom:14px}
+.q-num{flex-shrink:0;background:#dbeafe;color:#1d4ed8;font-size:11px;font-weight:700;padding:2px 7px;border-radius:4px;line-height:20px;height:20px;margin-top:1px}
+.q-num.added{background:#fce7f3;color:#9d174d}
+.q-text{font-size:13px;font-weight:600;color:#1e293b}
+.q-criteria{font-size:12px;color:#64748b;margin-top:4px;line-height:1.55}
+.q-boundary{font-size:11px;color:#94a3b8;margin-top:8px;padding:8px 10px;background:#f8fafc;border-left:3px solid #e2e8f0;border-radius:0 4px 4px 0;line-height:1.5;white-space:pre-line}
+.controls{margin-top:12px}
+/* Radio / checkbox options */
+.opts{display:flex;flex-direction:column;gap:5px}
+.opt{display:flex;align-items:flex-start;gap:8px;padding:8px 10px;border:1.5px solid #e2e8f0;border-radius:6px;cursor:pointer;transition:all .1s;font-size:13px;user-select:none}
+.opt:hover{background:#f8fafc;border-color:#cbd5e1}
+.opt.sel{background:#eff6ff;border-color:#93c5fd}
+.opt input{flex-shrink:0;margin-top:2px;accent-color:#2563eb;width:14px;height:14px;cursor:pointer}
+.opt-inner{flex:1}
+.opt-label{font-weight:500}
+.opt-desc{font-size:11px;color:#64748b;margin-top:1px}
+/* Scale */
+.scale{display:flex;gap:4px;margin-top:10px}
+.scale-item{flex:1}
+.scale-item input{display:none}
+.scale-item label{display:flex;flex-direction:column;align-items:center;gap:3px;padding:8px 4px;border:1.5px solid #e2e8f0;border-radius:6px;cursor:pointer;text-align:center;transition:all .12s;font-size:11px}
+.scale-item label:hover{border-color:#93c5fd;background:#f8fafc}
+.scale-item input:checked+label{border-color:#2563eb;background:#eff6ff;color:#1d4ed8}
+.scale-num{font-size:17px;font-weight:700;line-height:1}
+.scale-lbl{font-size:9.5px;color:#94a3b8;line-height:1.3}
+.scale-item input:checked+label .scale-lbl{color:#3b82f6}
+/* Text */
+textarea,input[type=text],input[type=date]{width:100%;padding:8px 10px;border:1.5px solid #e2e8f0;border-radius:6px;font-size:13px;font-family:inherit;color:#1e293b;background:#fafafa;transition:border-color .15s;resize:vertical}
+textarea:focus,input[type=text]:focus,input[type=date]:focus{outline:none;border-color:#3b82f6;background:white}
+textarea{min-height:68px}
+.evid{margin-top:6px;margin-bottom:14px;padding:10px 14px 12px}
+.q4-context{display:none;background:#fef9c3;border:1px solid #fde047;border-radius:6px;padding:9px 12px;margin-bottom:12px;font-size:12px;color:#713f12;line-height:1.5}
+.q4-context.visible{display:block}
+.q4-context .ctx-label{font-weight:700;display:block;margin-bottom:2px;font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:#92400e}
+.q4-context .ctx-desc{color:#1e293b;font-style:italic}
+.q4-context .ctx-warn{color:#ef4444;font-weight:600}
+.piv-row{display:none}.piv-row.show{display:block}
+.submit-bar{background:white;border:1px solid #e2e8f0;border-radius:8px;padding:20px;margin-top:24px;display:flex;flex-direction:column;gap:12px}
+.submit-note{font-size:12px;color:#64748b}
+.btn-submit{background:#1e293b;color:white;padding:10px 24px;font-size:13px}
+.btn-submit:hover{background:#0f172a}
+.btn-submit:disabled{background:#94a3b8;cursor:not-allowed}
+.btn-csv-submit{background:#f1f5f9;color:#475569;border:1px solid #e2e8f0;font-size:13px}
+.btn-csv-submit:hover{background:#e2e8f0}
+#submit-status{font-size:12px;font-weight:600}
+#submit-status.ok{color:#10b981}
+#submit-status.err{color:#ef4444}
+#submit-status.sending{color:#f59e0b}
+.evid-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#94a3b8;margin-bottom:6px}
+.evid-hint{font-size:11.5px;color:#475569;background:#f1f5f9;border:1px solid #e2e8f0;border-radius:5px;padding:7px 10px;margin-bottom:7px;line-height:1.6;white-space:pre-wrap}
+/* Metadata */
+.meta-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-top:12px}
+.field-group>label{display:block;font-size:11px;font-weight:600;color:#64748b;text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px}
+/* Q1 elements */
+.elements{display:flex;flex-direction:column;gap:10px;margin-top:10px}
+.el-block{border:1.5px solid #e2e8f0;border-radius:8px;padding:14px;background:#fafafa}
+.el-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.el-num{font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.05em}
+.el-remove{background:none;border:none;color:#ef4444;cursor:pointer;font-size:12px;padding:2px 8px;border-radius:4px;font-family:inherit}
+.el-remove:hover{background:#fef2f2}
+.el-fields{display:grid;gap:9px}
+.el-row{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+.el-label{font-size:11px;font-weight:600;color:#64748b;margin-bottom:4px}
+.pill-group{display:flex;gap:5px;flex-wrap:wrap}
+.pill-radio{display:none}
+.pill-radio+label{padding:4px 11px;border:1.5px solid #e2e8f0;border-radius:20px;font-size:12px;cursor:pointer;transition:all .1s;color:#475569;user-select:none}
+.pill-radio:checked+label{border-color:#2563eb;background:#eff6ff;color:#1d4ed8;font-weight:500}
+.add-el-btn{display:flex;align-items:center;justify-content:center;gap:6px;width:100%;background:none;border:1.5px dashed #cbd5e1;color:#64748b;padding:10px;border-radius:6px;cursor:pointer;font-size:13px;font-family:inherit;margin-top:8px;transition:all .15s}
+.add-el-btn:hover{border-color:#3b82f6;color:#2563eb;background:#eff6ff}
+/* Derived tier */
+.derived{display:none;margin-top:10px;padding:8px 12px;border-radius:6px;font-size:12px;font-weight:600}
+.derived.show{display:block}
+.derived.structural{background:#fef3c7;color:#92400e}
+.derived.accrued{background:#d1fae5;color:#065f46}
+.derived.replaceable{background:#fee2e2;color:#991b1b}
+.derived.flagged{background:#f3e8ff;color:#6b21a8}
+/* Inline yes/no for sub-fields */
+.yn-group{display:flex;gap:6px;margin-top:6px}
+.yn-opt{display:none}
+.yn-opt+label{padding:5px 14px;border:1.5px solid #e2e8f0;border-radius:6px;font-size:12px;cursor:pointer;color:#475569;user-select:none;transition:all .1s}
+.yn-opt:checked+label{border-color:#2563eb;background:#eff6ff;color:#1d4ed8;font-weight:500}
+/* Other specify */
+.other-field{margin-top:6px;display:none}
+.other-field.show{display:block}
+@media(max-width:600px){.meta-grid{grid-template-columns:1fr}.el-row{grid-template-columns:1fr}.scale{flex-wrap:wrap}.scale-item{flex:0 0 calc(33% - 3px)}}
+</style>
+</head>
+<body>
+
+<div class="app-header">
+  <h1>QRE Analytic Reframe v2</h1>
+  <div class="header-right">
+    <span class="save-indicator" id="saveInd">●&nbsp;unsaved</span>
+    <button class="btn btn-ghost" onclick="clearForm()">Clear</button>
+    <button class="btn btn-ghost" onclick="downloadCSV()">↓ CSV</button>
+    <button class="btn btn-green" onclick="downloadJSON()">↓ JSON</button>
+  </div>
+</div>
+
+<div class="container">
+
+<!-- METADATA -->
+<div class="section-title">Ad Details</div>
+<div class="card">
+  <div class="meta-grid">
+    <div class="field-group">
+      <label for="ad_id">Ad ID / Name</label>
+      <input type="text" id="ad_id" placeholder="e.g. Brand_AdTitle_2025">
+    </div>
+    <div class="field-group">
+      <label for="coder_name">Coder Name</label>
+      <input type="text" id="coder_name" placeholder="Your name">
+    </div>
+    <div class="field-group">
+      <label for="code_date">Date</label>
+      <input type="date" id="code_date">
+    </div>
+  </div>
+</div>
+
+<!-- SECTION 1: UNEXPECTEDNESS -->
+<div class="section-title">Unexpectedness</div>
+
+<!-- Q1 -->
+<div class="card">
+  <div class="card-top">
+    <span class="q-num">Q1</span>
+    <div>
+      <div class="q-text">Identify each unexpected or surprising element in the ad</div>
+      <div class="q-criteria">Code attributes for every element. If none, leave empty and proceed to Q4.</div>
+    </div>
+  </div>
+  <div class="elements" id="elements-list"></div>
+  <button class="add-el-btn" onclick="addElement()">+ Add Unexpected Element</button>
+</div>
+
+<!-- Q4 -->
+<div class="card" id="card-q4">
+  <div class="card-top">
+    <span class="q-num">Q4</span>
+    <div>
+      <div class="q-text">Dramatic tension — for the PIVOTAL element, which mechanisms drive it?</div>
+      <div class="q-criteria">Multi-select. If Q1 = 0 elements, skip.</div>
+    </div>
+  </div>
+  <div id="q4-pivotal-context" class="q4-context"></div>
+  <div class="controls">
+    <div class="opts" id="q4-opts">
+      <label class="opt"><input type="checkbox" name="q4" value="Opposition"><span class="opt-inner"><span class="opt-label">Opposition</span><span class="opt-desc">Visible conflict between forces, people, or ideas</span></span></label>
+      <label class="opt"><input type="checkbox" name="q4" value="Uncertainty"><span class="opt-inner"><span class="opt-label">Uncertainty</span><span class="opt-desc">Something hidden/unknown that the ad asks the viewer to wait for</span></span></label>
+      <label class="opt"><input type="checkbox" name="q4" value="Anticipation"><span class="opt-inner"><span class="opt-label">Anticipation</span><span class="opt-desc">Something signalled as coming but not yet arrived</span></span></label>
+      <label class="opt"><input type="checkbox" name="q4" value="Contradiction"><span class="opt-inner"><span class="opt-label">Contradiction</span><span class="opt-desc">Two things shown as mismatched (irony)</span></span></label>
+      <label class="opt"><input type="checkbox" name="q4" value="Dilemma"><span class="opt-inner"><span class="opt-label">Dilemma</span><span class="opt-desc">Character faces a no-good-option choice</span></span></label>
+      <label class="opt"><input type="checkbox" name="q4" value="Instability / Disorder"><span class="opt-inner"><span class="opt-label">Instability / Disorder</span><span class="opt-desc">Chaos, breakdown, things falling apart</span></span></label>
+      <label class="opt"><input type="checkbox" name="q4" value="Constraint"><span class="opt-inner"><span class="opt-label">Constraint</span><span class="opt-desc">Character cannot act when they want to</span></span></label>
+      <label class="opt"><input type="checkbox" name="q4" value="Abrupt change"><span class="opt-inner"><span class="opt-label">Abrupt change</span><span class="opt-desc">Sudden shift (jump scare, smash cut)</span></span></label>
+      <label class="opt"><input type="checkbox" name="q4" value="Humour at someone's expense"><span class="opt-inner"><span class="opt-label">Humour at someone's expense</span><span class="opt-desc">Comic mishap, embarrassment, schadenfreude</span></span></label>
+      <label class="opt"><input type="checkbox" name="q4" value="Sensory / Perceptual"><span class="opt-inner"><span class="opt-label">Sensory / Perceptual</span><span class="opt-desc">Uncomfortable or arresting sensory experience</span></span></label>
+    </div>
+  </div>
+</div>
+  <div class="evid"><div class="evid-label">Required Evidence</div><textarea id="q4-evid" placeholder="Name the pivotal element and explain which mechanism(s) drive it and why — one line per mechanism."></textarea></div>
+
+<!-- SECTION 2: NARRATIVE STRUCTURE -->
+<div class="section-title">Narrative Structure</div>
+
+<!-- Q5 -->
+<div class="card">
+  <div class="card-top">
+    <span class="q-num">Q5</span>
+    <div>
+      <div class="q-text">How is dramatic tension depicted? Character structure.</div>
+    </div>
+  </div>
+  <div class="controls">
+    <div class="opts">
+      <label class="opt"><input type="radio" name="q5" value="Single main character"><span class="opt-inner"><span class="opt-label">Single main character</span><span class="opt-desc">One identifiable protagonist the ad follows</span></span></label>
+      <label class="opt"><input type="radio" name="q5" value="Various characters"><span class="opt-inner"><span class="opt-label">Various characters</span><span class="opt-desc">Ensemble or multiple equal protagonists or vignette structure</span></span></label>
+      <label class="opt"><input type="radio" name="q5" value="Viewer as implied protagonist"><span class="opt-inner"><span class="opt-label">Viewer as implied protagonist</span><span class="opt-desc">POV / direct address / "you" framing</span></span></label>
+      <label class="opt"><input type="radio" name="q5" value="None"><span class="opt-inner"><span class="opt-label">None</span><span class="opt-desc">No character-driven structure at all</span></span></label>
+    </div>
+  </div>
+</div>
+  <div class="evid"><div class="evid-label">Required Evidence</div><textarea id="q5-evid" placeholder="Name or describe the main character(s) and note when they first appear (e.g. 'middle-aged dad at 0:03')."></textarea></div>
+
+<!-- Q5a -->
+<div class="card">
+  <div class="card-top">
+    <span class="q-num added">Q5a</span>
+    <div>
+      <div class="q-text">Protagonist clarity — does the same protagonist/viewpoint sustain across the whole ad?</div>
+    </div>
+  </div>
+  <div class="controls">
+    <div class="opts">
+      <label class="opt"><input type="radio" name="q5a" value="Sustained"><span class="opt-inner"><span class="opt-label">Sustained</span><span class="opt-desc">One clear viewpoint throughout</span></span></label>
+      <label class="opt"><input type="radio" name="q5a" value="Shifts once"><span class="opt-inner"><span class="opt-label">Shifts once</span><span class="opt-desc">Protagonist or POV changes once</span></span></label>
+      <label class="opt"><input type="radio" name="q5a" value="Multiple shifts"><span class="opt-inner"><span class="opt-label">Multiple shifts</span><span class="opt-desc">Cuts between multiple perspectives without one dominant</span></span></label>
+      <label class="opt"><input type="radio" name="q5a" value="Not applicable"><span class="opt-inner"><span class="opt-label">Not applicable</span><span class="opt-desc">No character-driven structure</span></span></label>
+    </div>
+  </div>
+</div>
+  <div class="evid"><div class="evid-label">Required Evidence</div><textarea id="q5a-evid" placeholder="Note any points where the viewpoint shifts, and describe who it shifts from and to."></textarea></div>
+
+<!-- Q6 -->
+<div class="card">
+  <div class="card-top">
+    <span class="q-num">Q6</span>
+    <div>
+      <div class="q-text">Is the protagonist's goal or desire identifiable from the ad?</div>
+    </div>
+  </div>
+  <div class="controls">
+    <div class="opts">
+      <label class="opt"><input type="radio" name="q6" value="Yes, clearly stated or shown"><span class="opt-label">Yes, clearly stated or shown</span></label>
+      <label class="opt"><input type="radio" name="q6" value="Yes, but implied only"><span class="opt-label">Yes, but implied only (viewer infers)</span></label>
+      <label class="opt"><input type="radio" name="q6" value="No identifiable goal"><span class="opt-label">No identifiable goal</span></label>
+      <label class="opt"><input type="radio" name="q6" value="Not applicable — no protagonist"><span class="opt-label">Not applicable — no protagonist</span></label>
+    </div>
+  </div>
+</div>
+  <div class="evid"><div class="evid-label">Required Evidence</div><textarea id="q6-evid" placeholder="State what the character wants in one line, and note the timestamp where this becomes clear."></textarea></div>
+
+<!-- Q7 -->
+<div class="card">
+  <div class="card-top">
+    <span class="q-num">Q7</span>
+    <div>
+      <div class="q-text">What is at stake if the goal/desire is not met, or tension not resolved?</div>
+      <div class="q-criteria">Multi-select all that apply.</div>
+    </div>
+  </div>
+  <div class="controls">
+    <div class="opts">
+      <label class="opt"><input type="checkbox" name="q7" value="Life / safety"><span class="opt-label">Life / safety</span></label>
+      <label class="opt"><input type="checkbox" name="q7" value="Love / relationship"><span class="opt-label">Love / relationship</span></label>
+      <label class="opt"><input type="checkbox" name="q7" value="Belonging / Acceptance"><span class="opt-label">Belonging / Acceptance</span></label>
+      <label class="opt"><input type="checkbox" name="q7" value="Social Status"><span class="opt-label">Social Status</span></label>
+      <label class="opt"><input type="checkbox" name="q7" value="Identity / self-worth"><span class="opt-label">Identity / self-worth</span></label>
+      <label class="opt"><input type="checkbox" name="q7" value="Freedom / control"><span class="opt-label">Freedom / control</span></label>
+      <label class="opt"><input type="checkbox" name="q7" value="Morality / integrity"><span class="opt-label">Morality / integrity</span></label>
+      <label class="opt"><input type="checkbox" name="q7" value="Money / Resources"><span class="opt-label">Money / Resources</span></label>
+      <label class="opt"><input type="checkbox" name="q7" value="Achievement / Success"><span class="opt-label">Achievement / Success</span></label>
+      <label class="opt"><input type="checkbox" name="q7" value="Truth / justice"><span class="opt-label">Truth / justice</span></label>
+      <label class="opt"><input type="checkbox" name="q7" value="Family / Community"><span class="opt-label">Family / Community</span></label>
+      <label class="opt"><input type="checkbox" name="q7" value="Meaning / purpose"><span class="opt-label">Meaning / purpose</span></label>
+      <label class="opt"><input type="checkbox" name="q7" value="None / Does Not Apply"><span class="opt-label">None / Does Not Apply</span></label>
+    </div>
+  </div>
+</div>
+  <div class="evid"><div class="evid-label">Required Evidence</div><textarea id="q7-evid" placeholder="For each stake type selected, describe the moment in the ad that shows what is at risk and when (e.g. 'Social status — protagonist humiliated in front of peers at 0:18')."></textarea></div>
+
+<!-- Q8 -->
+<div class="card">
+  <div class="card-top">
+    <span class="q-num">Q8</span>
+    <div>
+      <div class="q-text">How severe is what stands in the protagonist's way? (Obstacle severity)</div>
+      <div class="q-boundary">Tier 2→3: would a viewer say "this is a real problem" (3) or "this is an inconvenience" (2)?</div>
+    </div>
+  </div>
+  <div class="controls">
+    <div class="scale" id="q8-scale"></div>
+    <div style="margin-top:10px">
+      <div class="el-label">Antagonist present?</div>
+      <div class="yn-group">
+        <input class="yn-opt" type="radio" name="q8-antag" id="q8-antag-y" value="Yes"><label for="q8-antag-y">Yes</label>
+        <input class="yn-opt" type="radio" name="q8-antag" id="q8-antag-n" value="No"><label for="q8-antag-n">No</label>
+      </div>
+    </div>
+  </div>
+</div>
+  <div class="evid"><div class="evid-label">Required Evidence</div><textarea id="q8-evid" placeholder="Describe what stands in the protagonist's way and when it appears. Note whether there is a named antagonist (a person or force actively opposing them)."></textarea></div>
+
+<!-- Q9 -->
+<div class="card">
+  <div class="card-top">
+    <span class="q-num">Q9</span>
+    <div>
+      <div class="q-text">How much evidence does the ad provide for the viewer to care about resolution?</div>
+      <div class="q-boundary">Tier 2→3: does the ad treat the resolution as the central event (3+), or as one of several events (2)?</div>
+    </div>
+  </div>
+  <div class="controls"><div class="scale" id="q9-scale"></div></div>
+</div>
+  <div class="evid"><div class="evid-label">Required Evidence</div><textarea id="q9-evid" placeholder="List the moments where the ad builds the stakes, note what's at risk and how it's shown, and explain which tier boundary this falls at."></textarea></div>
+
+<!-- Q10 -->
+<div class="card">
+  <div class="card-top">
+    <span class="q-num">Q10</span>
+    <div>
+      <div class="q-text">Peak moment intensity — structural commitment to the single most emphasised moment</div>
+      <div class="q-boundary">1→2: count production layers amplifying the peak (music, framing, edit, performance, sound, text). 1 layer = 1. 2+ layers = at least 2.
+2→3: is the rest of the ad structured AS setup for this moment?</div>
+    </div>
+  </div>
+  <div class="controls"><div class="scale" id="q10-scale"></div></div>
+</div>
+  <div class="evid"><div class="evid-label">Required Evidence</div><textarea id="q10-evid" placeholder="Identify the single most emphasised moment (timestamp), its type (tension / payoff / humour / hybrid), which production layers amplify it (e.g. music swell, close-up, cut), and why it falls at this tier."></textarea></div>
+
+<!-- Q10a -->
+<div class="card">
+  <div class="card-top">
+    <span class="q-num added">Q10a</span>
+    <div>
+      <div class="q-text">Emotional peak intensity — independent of Q10, does the ad have an emotional high point?</div>
+      <div class="q-criteria">May coincide with Q10 peak or be at a different timestamp. Flag if different.</div>
+    </div>
+  </div>
+  <div class="controls"><div class="scale" id="q10a-scale"></div></div>
+</div>
+  <div class="evid"><div class="evid-label">Required Evidence</div><textarea id="q10a-evid" placeholder="Identify the emotional high point (timestamp), whether it is positive / negative / complex, and which production cues mark it. Note if it differs from the Q10 peak."></textarea></div>
+
+<!-- Q11 -->
+<div class="card">
+  <div class="card-top">
+    <span class="q-num">Q11</span>
+    <div>
+      <div class="q-text">How does the tension resolve?</div>
+      <div class="q-boundary">Open-ended vs Unresolved: does the ad INVITE the viewer to construct the resolution (open-ended), or does it simply not close (unresolved)?</div>
+    </div>
+  </div>
+  <div class="controls">
+    <div class="opts">
+      <label class="opt"><input type="radio" name="q11" value="Resolved positive"><span class="opt-label">Resolved positive — closes in a way framed as good (win / warmth / delight)</span></label>
+      <label class="opt"><input type="radio" name="q11" value="Resolved negative"><span class="opt-label">Resolved negative — closes in a way framed as bad (loss / disappointment)</span></label>
+      <label class="opt"><input type="radio" name="q11" value="Intentionally open-ended"><span class="opt-label">Intentionally open-ended — ad invites viewer to wonder/guess</span></label>
+      <label class="opt"><input type="radio" name="q11" value="Unresolved"><span class="opt-label">Unresolved — ad just stops without closing the arc</span></label>
+    </div>
+  </div>
+</div>
+  <div class="evid"><div class="evid-label">Required Evidence</div><textarea id="q11-evid" placeholder="Note the timestamp and describe how the ad ends — what the viewer sees or hears at the point of resolution (or non-resolution)."></textarea></div>
+
+<!-- Q12 -->
+<div class="card">
+  <div class="card-top">
+    <span class="q-num">Q12</span>
+    <div>
+      <div class="q-text">WHERE does the resolution happen?</div>
+    </div>
+  </div>
+  <div class="controls">
+    <div class="opts">
+      <label class="opt"><input type="radio" name="q12" value="In the world of the ad"><span class="opt-inner"><span class="opt-label">In the world of the ad</span><span class="opt-desc">Problem is solved on screen, viewer sees the outcome</span></span></label>
+      <label class="opt"><input type="radio" name="q12" value="Inside the character's head"><span class="opt-inner"><span class="opt-label">Inside the character's head</span><span class="opt-desc">Character learns / realises / changes; viewer sees internal shift</span></span></label>
+      <label class="opt"><input type="radio" name="q12" value="Inside the viewer's head"><span class="opt-inner"><span class="opt-label">Inside the viewer's head</span><span class="opt-desc">Elliptical; viewer assembles the conclusion themselves</span></span></label>
+    </div>
+  </div>
+</div>
+  <div class="evid"><div class="evid-label">Required Evidence</div><textarea id="q12-evid" placeholder="Describe where the payoff lands: on screen (world of ad), inside the character's head (internal realisation), or inside the viewer's head (viewer assembles it). Note what you observe and when."></textarea></div>
+
+<!-- Q13 -->
+<div class="card">
+  <div class="card-top">
+    <span class="q-num">Q13</span>
+    <div>
+      <div class="q-text">Overall dominant tone of the ad</div>
+    </div>
+  </div>
+  <div class="controls">
+    <div class="opts">
+      <label class="opt"><input type="radio" name="q13" value="Sentimental"><span class="opt-inner"><span class="opt-label">Sentimental</span><span class="opt-desc">Emotion-led, warmth or poignancy central</span></span></label>
+      <label class="opt"><input type="radio" name="q13" value="Suspenseful"><span class="opt-inner"><span class="opt-label">Suspenseful</span><span class="opt-desc">Built around tension, anticipation, or threat</span></span></label>
+      <label class="opt"><input type="radio" name="q13" value="Humorous"><span class="opt-inner"><span class="opt-label">Humorous</span><span class="opt-desc">Comedy is the dominant register</span></span></label>
+      <label class="opt"><input type="radio" name="q13" value="Intriguing"><span class="opt-inner"><span class="opt-label">Intriguing</span><span class="opt-desc">Invites curiosity, mystery, or puzzling-out</span></span></label>
+      <label class="opt"><input type="radio" name="q13" value="Informational"><span class="opt-inner"><span class="opt-label">Informational / Interesting</span><span class="opt-desc">Primarily explanatory/educational</span></span></label>
+      <label class="opt"><input type="radio" name="q13" value="Other"><span class="opt-label">Other (specify)</span></label>
+    </div>
+    <div class="other-field" id="q13-other"><input type="text" id="q13-other-val" placeholder="Specify tone…"></div>
+  </div>
+</div>
+  <div class="evid"><div class="evid-label">Required Evidence</div><textarea id="q13-evid" placeholder="State the dominant tone and explain what specifically in the ad makes this the primary register over any others present."></textarea></div>
+
+<!-- SECTION 3: BRAND INTEGRATION -->
+<div class="section-title">Brand Integration</div>
+
+<!-- Q14 -->
+<div class="card">
+  <div class="card-top">
+    <span class="q-num">Q14</span>
+    <div>
+      <div class="q-text">What is the brand's narrative role?</div>
+      <div class="q-boundary">Some role → Critical: REMOVAL TEST — if you remove the brand from the narrative in your head, does the story still work? Yes = "some role"; breaks = "critical".</div>
+    </div>
+  </div>
+  <div class="controls">
+    <div class="opts">
+      <label class="opt"><input type="radio" name="q14" value="Present visually only"><span class="opt-label">Present visually only — brand is on screen but plays no story role</span></label>
+      <label class="opt"><input type="radio" name="q14" value="Plays some role"><span class="opt-label">Plays some role — brand is in action or dialogue but is replaceable</span></label>
+      <label class="opt"><input type="radio" name="q14" value="Critical role"><span class="opt-label">Critical role — the story does not work without the brand</span></label>
+    </div>
+  </div>
+</div>
+  <div class="evid"><div class="evid-label">Required Evidence</div><textarea id="q14-evid" placeholder="List the moments the brand appears and note the result of the removal test — if you mentally remove the brand, does the story still work?"></textarea></div>
+
+<!-- Q15 -->
+<div class="card">
+  <div class="card-top">
+    <span class="q-num">Q15</span>
+    <div>
+      <div class="q-text">WHERE in the narrative does the brand act? (Multi-select)</div>
+    </div>
+  </div>
+  <div class="controls">
+    <div class="opts">
+      <label class="opt"><input type="checkbox" name="q15" value="The Primary Tension (complication)"><span class="opt-inner"><span class="opt-label">The Primary Tension (complication)</span><span class="opt-desc">Brand is the cause or focus of the tension</span></span></label>
+      <label class="opt"><input type="checkbox" name="q15" value="The Resolution"><span class="opt-inner"><span class="opt-label">The Resolution</span><span class="opt-desc">Brand resolves the tension</span></span></label>
+      <label class="opt"><input type="checkbox" name="q15" value="The Joke / Punchline"><span class="opt-inner"><span class="opt-label">The Joke / Punchline</span><span class="opt-desc">Brand is the comic device</span></span></label>
+      <label class="opt"><input type="checkbox" name="q15" value="None of the above"><span class="opt-label">None of the above</span></label>
+    </div>
+  </div>
+</div>
+  <div class="evid"><div class="evid-label">Required Evidence</div><textarea id="q15-evid" placeholder="For each selected position, note the timestamp and describe exactly how the brand acts at that point in the narrative."></textarea></div>
+
+<!-- Q16 -->
+<div class="card">
+  <div class="card-top">
+    <span class="q-num">Q16</span>
+    <div>
+      <div class="q-text">Brand Swap Test A — remove the brand entirely. How much of the ad's meaning is lost?</div>
+    </div>
+  </div>
+  <div class="controls">
+    <div class="opts">
+      <label class="opt"><input type="radio" name="q16" value="Lots" onchange="deriveD2()"><span class="opt-inner"><span class="opt-label">Lots</span><span class="opt-desc">The ad does not work without the brand; the brand is structural</span></span></label>
+      <label class="opt"><input type="radio" name="q16" value="Not lots" onchange="deriveD2()"><span class="opt-inner"><span class="opt-label">Not lots</span><span class="opt-desc">The ad would still work without this brand</span></span></label>
+    </div>
+  </div>
+</div>
+  <div class="evid"><div class="evid-label">Required Evidence</div><textarea id="q16-evid" placeholder="In one line: if the brand were removed entirely, what specifically breaks? Which elements of the story or idea depend on it?"></textarea></div>
+
+<!-- Q17 -->
+<div class="card">
+  <div class="card-top">
+    <span class="q-num">Q17</span>
+    <div>
+      <div class="q-text">Brand Swap Test B — replace the brand with a direct competitor. How much meaning is lost?</div>
+      <div class="q-boundary">Q16 lots + Q17 lots = STRUCTURAL | Q16 not lots + Q17 lots = ACCRUED | Q16 not lots + Q17 not lots = REPLACEABLE | Q16 lots + Q17 not lots = flag for QA (default REPLACEABLE)</div>
+    </div>
+  </div>
+  <div class="controls">
+    <div class="opts">
+      <label class="opt"><input type="radio" name="q17" value="Lots" onchange="deriveD2()"><span class="opt-inner"><span class="opt-label">Lots</span><span class="opt-desc">The ad genuinely belongs to this brand; a competitor swap would be jarring</span></span></label>
+      <label class="opt"><input type="radio" name="q17" value="Not lots" onchange="deriveD2()"><span class="opt-inner"><span class="opt-label">Not lots</span><span class="opt-desc">A competitor could swap in and the ad would still function</span></span></label>
+    </div>
+    <div class="derived" id="q17-derived"></div>
+  </div>
+</div>
+  <div class="evid"><div class="evid-label">Required Evidence</div><textarea id="q17-evid" placeholder="Name the competitor you used in the thought experiment. Would their swap feel jarring or nonsensical? Note the derived D2 tier shown above."></textarea></div>
+
+<!-- Q18 -->
+<div class="card">
+  <div class="card-top">
+    <span class="q-num">Q18</span>
+    <div>
+      <div class="q-text">Which dimension of the brand carries its role? (Multi-select)</div>
+    </div>
+  </div>
+  <div class="controls">
+    <div class="opts">
+      <label class="opt"><input type="checkbox" name="q18" value="Name/Logo"><span class="opt-label">Name / Logo — recognition via mark or wordmark</span></label>
+      <label class="opt"><input type="checkbox" name="q18" value="Product Feature"><span class="opt-label">Product Feature — specific product attribute or capability</span></label>
+      <label class="opt"><input type="checkbox" name="q18" value="Tone / Personality"><span class="opt-label">Tone / Personality — voice, personality, manner the brand has cultivated</span></label>
+      <label class="opt"><input type="checkbox" name="q18" value="Values / Beliefs"><span class="opt-label">Values / Beliefs — what the brand stands for</span></label>
+      <label class="opt"><input type="checkbox" name="q18" value="Brand Device"><span class="opt-label">Brand Device — brand character or owned creative device</span></label>
+    </div>
+  </div>
+</div>
+  <div class="evid"><div class="evid-label">Required Evidence</div><textarea id="q18-evid" placeholder="For each dimension selected, note the timestamp and describe the specific moment that shows this dimension carrying the brand's role."></textarea></div>
+
+<!-- SECTION 4: COMMUNICATION MODE -->
+<div class="section-title">Communication Mode</div>
+
+<!-- Q19 -->
+<div class="card">
+  <div class="card-top">
+    <span class="q-num">Q19</span>
+    <div>
+      <div class="q-text">HOW does the ad communicate its central message?</div>
+      <div class="q-criteria">Most ads use a mix. Pick the mode doing the MOST work.</div>
+    </div>
+  </div>
+  <div class="controls">
+    <div class="opts">
+      <label class="opt"><input type="radio" name="q19" value="Verbally" onchange="updateConditionals()"><span class="opt-inner"><span class="opt-label">Verbally</span><span class="opt-desc">The ad tells you the point via voiceover, dialogue, or text</span></span></label>
+      <label class="opt"><input type="radio" name="q19" value="Dramatically" onchange="updateConditionals()"><span class="opt-inner"><span class="opt-label">Dramatically</span><span class="opt-desc">The point is enacted through a story that unfolds over time</span></span></label>
+      <label class="opt"><input type="radio" name="q19" value="Symbolically" onchange="updateConditionals()"><span class="opt-inner"><span class="opt-label">Symbolically</span><span class="opt-desc">Point carried by imagery, mood, lifestyle cues without explicit story or statement</span></span></label>
+    </div>
+  </div>
+</div>
+  <div class="evid"><div class="evid-label">Required Evidence</div><textarea id="q19-evid" placeholder="Name the dominant mode and explain which specific elements do the most work — e.g. which line of dialogue, which visual, which sequence."></textarea></div>
+
+<!-- Q20 (conditional: Q19 = Verbally) -->
+<div class="card hidden" id="card-q20">
+  <div class="card-top">
+    <span class="q-num">Q20</span>
+    <div>
+      <div class="q-text">If verbally — what kind of speaker carries the verbal exposition?</div>
+    </div>
+  </div>
+  <div class="controls">
+    <div class="opts">
+      <label class="opt"><input type="radio" name="q20" value="First-person narrator"><span class="opt-inner"><span class="opt-label">First-person narrator</span><span class="opt-desc">Speaker is a character within the ad's world</span></span></label>
+      <label class="opt"><input type="radio" name="q20" value="Voiceover authority"><span class="opt-inner"><span class="opt-label">Voiceover authority</span><span class="opt-desc">Disembodied/external voice delivering the message (voice of god)</span></span></label>
+    </div>
+  </div>
+</div>
+
+<!-- SECTION 5: CULTURAL ELEMENTS -->
+<div class="section-title">Cultural Elements</div>
+
+<!-- Q21 -->
+<div class="card">
+  <div class="card-top">
+    <span class="q-num">Q21</span>
+    <div>
+      <div class="q-text">Which well-known cultural elements does the ad include?</div>
+      <div class="q-criteria">Multi-select. These are recognisable references from outside the ad's own world.</div>
+    </div>
+  </div>
+  <div class="controls">
+    <div class="opts">
+      <label class="opt"><input type="checkbox" name="q21" value="Famous celebrity" onchange="updateConditionals()"><span class="opt-label">Famous celebrity (name them in evidence)</span></label>
+      <label class="opt"><input type="checkbox" name="q21" value="Popular music" onchange="updateConditionals()"><span class="opt-label">Popular music (well-known song — name it in evidence)</span></label>
+      <label class="opt"><input type="checkbox" name="q21" value="Current cultural reference / meme" onchange="updateConditionals()"><span class="opt-label">Current cultural reference / meme (identify in evidence)</span></label>
+      <label class="opt"><input type="checkbox" name="q21" value="None of the above" onchange="updateConditionals()"><span class="opt-label">None of the above</span></label>
+    </div>
+  </div>
+</div>
+  <div class="evid"><div class="evid-label">Required Evidence</div><textarea id="q21-evid" placeholder="Name each cultural element and note when it appears (e.g. 'Taylor Swift at 0:05', 'Gangnam Style beat throughout')."></textarea></div>
+
+<!-- Q22 (conditional: Q21 has cultural elements) -->
+<div class="card hidden" id="card-q22">
+  <div class="card-top">
+    <span class="q-num">Q22</span>
+    <div>
+      <div class="q-text">Without the cultural reference(s), would the ad still make sense as a story?</div>
+    </div>
+  </div>
+  <div class="controls">
+    <div class="opts">
+      <label class="opt"><input type="radio" name="q22" value="No — full appreciation requires recognition"><span class="opt-label">No — full appreciation requires recognition</span></label>
+      <label class="opt"><input type="radio" name="q22" value="Partial — adds depth but ad works without it"><span class="opt-label">Partial — the reference adds depth but the ad works without it</span></label>
+      <label class="opt"><input type="radio" name="q22" value="Yes — no prior knowledge needed"><span class="opt-label">Yes — no prior knowledge needed</span></label>
+    </div>
+  </div>
+</div>
+  <div class="evid"><div class="evid-label">Required Evidence</div><textarea id="q22-evid" placeholder="Explain what a viewer who does not recognise the reference would miss. Does the ad still make sense to them, or does the central point collapse?"></textarea></div>
+
+<!-- Q23 (conditional: Q21 has cultural elements) -->
+<div class="card hidden" id="card-q23">
+  <div class="card-top">
+    <span class="q-num">Q23</span>
+    <div>
+      <div class="q-text">What KIND of cultural reference does the ad use? (Multi-select)</div>
+    </div>
+  </div>
+  <div class="controls">
+    <div class="opts">
+      <label class="opt"><input type="checkbox" name="q23" value="Meme"><span class="opt-label">Meme</span></label>
+      <label class="opt"><input type="checkbox" name="q23" value="Current events"><span class="opt-label">Current events</span></label>
+      <label class="opt"><input type="checkbox" name="q23" value="Historical events"><span class="opt-label">Historical events</span></label>
+      <label class="opt"><input type="checkbox" name="q23" value="Cultural references"><span class="opt-inner"><span class="opt-label">Cultural references</span><span class="opt-desc">Genre, art form, subculture</span></span></label>
+      <label class="opt"><input type="checkbox" name="q23" value="Personalities"><span class="opt-inner"><span class="opt-label">Personalities</span><span class="opt-desc">Celebrity, influencer, historical figure</span></span></label>
+      <label class="opt"><input type="checkbox" name="q23" value="Other"><span class="opt-label">Other (describe in evidence)</span></label>
+    </div>
+  </div>
+</div>
+  <div class="evid"><div class="evid-label">Required Evidence</div><textarea id="q23-evid" placeholder="Name the specific reference for each type selected (e.g. 'Meme — Distracted Boyfriend format', 'Personality — David Beckham')."></textarea></div>
+
+<!-- Q24 (conditional: Q21 has cultural elements) -->
+<div class="card hidden" id="card-q24">
+  <div class="card-top">
+    <span class="q-num">Q24</span>
+    <div>
+      <div class="q-text">How load-bearing is the cultural reference?</div>
+    </div>
+  </div>
+  <div class="controls"><div class="scale" id="q24-scale"></div></div>
+</div>
+  <div class="evid"><div class="evid-label">Required Evidence</div><textarea id="q24-evid" placeholder="Name the reference and explain what a viewer needs to recognise for the ad to land. Is it decorative, or does the ad fail without it?"></textarea></div>
+
+<!-- SECTION 6: VISUAL DISTINCTIVENESS -->
+<div class="section-title">Visual Distinctiveness</div>
+
+<!-- Q25 -->
+<div class="card">
+  <div class="card-top">
+    <span class="q-num">Q25</span>
+    <div>
+      <div class="q-text">How unusual are the visual elements (setting, costumes, colors, camera angles, etc.)?</div>
+      <div class="q-criteria">Judge against a generic professional ad.</div>
+    </div>
+  </div>
+  <div class="controls"><div class="scale" id="q25-scale"></div></div>
+</div>
+  <div class="evid"><div class="evid-label">Required Evidence</div><textarea id="q25-evid" placeholder="Describe the visual elements that are unusual or distinctive (e.g. colour palette, framing, costumes) and note when they appear. Explain why this tier and not the one above or below."></textarea></div>
+
+<!-- Q26 -->
+<div class="card">
+  <div class="card-top">
+    <span class="q-num">Q26</span>
+    <div>
+      <div class="q-text">How different are the visuals relative to other ads in this CATEGORY?</div>
+      <div class="q-boundary">Q25 is absolute visual distinctiveness; Q26 is relative to the category. An ad can be visually conventional overall (Q25=1) but radical within its category (Q26=3).</div>
+    </div>
+  </div>
+  <div class="controls"><div class="scale" id="q26-scale"></div></div>
+</div>
+  <div class="evid"><div class="evid-label">Required Evidence</div><textarea id="q26-evid" placeholder="Name the product category, describe what a typical ad in this category looks like visually, and explain how this ad departs from that."></textarea></div>
+
+<!-- SECTION 7: OPENING & MESSAGE -->
+<div class="section-title">Opening &amp; Message</div>
+
+<!-- Q28 -->
+<div class="card">
+  <div class="card-top">
+    <span class="q-num">Q28</span>
+    <div>
+      <div class="q-text">Which of these appear in the FIRST 5 SECONDS? (Multi-select)</div>
+    </div>
+  </div>
+  <div class="controls">
+    <div class="opts">
+      <label class="opt"><input type="checkbox" name="q28" value="Brand element"><span class="opt-inner"><span class="opt-label">Brand element</span><span class="opt-desc">Logo, product, distinctive asset</span></span></label>
+      <label class="opt"><input type="checkbox" name="q28" value="Protagonist / main character"><span class="opt-label">Protagonist / main character</span></label>
+      <label class="opt"><input type="checkbox" name="q28" value="Tension or conflict event"><span class="opt-label">Tension or conflict event</span></label>
+      <label class="opt"><input type="checkbox" name="q28" value="Cultural element"><span class="opt-inner"><span class="opt-label">Cultural element</span><span class="opt-desc">Celeb, music, reference</span></span></label>
+      <label class="opt"><input type="checkbox" name="q28" value="None of the above"><span class="opt-label">None of the above</span></label>
+    </div>
+  </div>
+</div>
+  <div class="evid"><div class="evid-label">Required Evidence</div><textarea id="q28-evid" placeholder="List each element present in the first 5 seconds with its exact timestamp."></textarea></div>
+
+<!-- Q29 -->
+<div class="card">
+  <div class="card-top">
+    <span class="q-num">Q29</span>
+    <div>
+      <div class="q-text">How many distinct messages does the ad carry, and how do they relate?</div>
+    </div>
+  </div>
+  <div class="controls">
+    <div class="opts">
+      <label class="opt"><input type="radio" name="q29" value="One clear message"><span class="opt-inner"><span class="opt-label">One clear message</span><span class="opt-desc">Single takeaway, stateable in ≤10 words</span></span></label>
+      <label class="opt"><input type="radio" name="q29" value="Multiple consistent"><span class="opt-inner"><span class="opt-label">Multiple consistent</span><span class="opt-desc">Dominant + supporting messages that reinforce each other</span></span></label>
+      <label class="opt"><input type="radio" name="q29" value="Multiple competing"><span class="opt-inner"><span class="opt-label">Multiple competing</span><span class="opt-desc">Two or more messages pull against each other; viewer must arbitrate</span></span></label>
+      <label class="opt"><input type="radio" name="q29" value="No clear message"><span class="opt-label">No clear message</span></label>
+    </div>
+  </div>
+</div>
+  <div class="evid"><div class="evid-label">Required Evidence</div><textarea id="q29-evid" placeholder="State the primary message in 10 words or fewer. If there are additional messages, note them and whether they reinforce or compete with the primary."></textarea></div>
+
+<!-- SECTION 8: AUDIENCE INSIGHT -->
+<div class="section-title">Audience Insight</div>
+
+<!-- Q30 -->
+<div class="card">
+  <div class="card-top">
+    <span class="q-num">Q30</span>
+    <div>
+      <div class="q-text">How deep is the understanding of the audience the ad demonstrates?</div>
+      <div class="q-boundary">1→2: does the ad KNOW something true about the viewer (2), or merely cast and stage to them (1)?
+2→3: does it surface a known truth (2), or offer an illuminating WHY — a fresh lens on behaviour or culture (3)?</div>
+    </div>
+  </div>
+  <div class="controls"><div class="scale" id="q30-scale"></div></div>
+</div>
+  <div class="evid"><div class="evid-label">Required Evidence</div><textarea id="q30-evid" placeholder="State the insight in one line. Note how and when it is surfaced. For tier 3: what does the viewer now see differently about themselves, the category, or the world?"></textarea></div>
+
+<!-- Q30a -->
+<div class="card">
+  <div class="card-top">
+    <span class="q-num added">Q30a</span>
+    <div>
+      <div class="q-text">Target specificity — how dense are the ad's lived-in details?</div>
+      <div class="q-criteria">This is about texture and specific details that connect with people — not insight or understanding (that's Q30). Does the world of the ad feel documented and real, or generic and constructed?</div>
+    </div>
+  </div>
+  <div class="controls"><div class="scale" id="q30a-scale"></div></div>
+</div>
+  <div class="evid"><div class="evid-label">Required Evidence</div><textarea id="q30a-evid" placeholder="List the specific lived-in details that make this world feel real and particular — objects, phrases, settings, behaviours — and note when they appear."></textarea></div>
+
+<!-- SECTION 9: IDENTITY & BELONGING -->
+<div class="section-title">Identity &amp; Belonging</div>
+
+<!-- Q31 -->
+<div class="card">
+  <div class="card-top">
+    <span class="q-num">Q31</span>
+    <div>
+      <div class="q-text">To what degree does the ad signal an IN-GROUP — a sense of "us", people united by a shared identity, lifestyle, values, or worldview that the ad appears to be speaking to or about?</div>
+      <div class="q-criteria">The group doesn't need to be visually obvious — an in-group can be defined by shared beliefs, cultural values, or a way of seeing the world. What matters is whether the ad signals "this is for people like us." Code based on whether an audience member could recognise the in-group — not whether you personally identify with it.</div>
+      <div class="q-boundary">1→2: do the signals suggest some shared values or identity but lack focus or coordination (1), or do multiple elements — language, setting, scenario, music, references — all point at the same group, creating a clear sense of "us" (2)?</div>
+    </div>
+  </div>
+  <div class="controls"><div class="scale" id="q31-scale"></div></div>
+</div>
+  <div class="evid"><div class="evid-label">Required Evidence</div><textarea id="q31-evid" placeholder="Describe the in-group in one line. List the markers (cast, language, setting, scenario, music) that signal this group, with timestamps."></textarea></div>
+
+<!-- Q32 -->
+<div class="card">
+  <div class="card-top">
+    <span class="q-num added">Q32</span>
+    <div>
+      <div class="q-text">To what degree does the ad suggest or imply an OUT-GROUP — a sense of "them", people who fall outside the world or perspective the ad is speaking to?</div>
+      <div class="q-boundary">1→2: is the out-group merely the logical flipside of the in-group — an implied "them" that follows automatically from the "us" (1) — or does the ad actively characterise, show, or name those who are "not this", making the contrast explicit (2)?</div>
+    </div>
+  </div>
+  <div class="controls"><div class="scale" id="q32-scale"></div></div>
+</div>
+  <div class="evid"><div class="evid-label">Required Evidence</div><textarea id="q32-evid" placeholder="Describe the out-group if present — are 'they' shown, named, parodied, or simply implied by contrast? Note timestamps. Code based on what the ad signals, not whether you personally feel like an insider or outsider."></textarea></div>
+
+<!-- Q33 (conditional: Q31 >= 1) -->
+<div class="card hidden" id="card-q33">
+  <div class="card-top">
+    <span class="q-num">Q33</span>
+    <div>
+      <div class="q-text">How broad is the implied in-group?</div>
+    </div>
+  </div>
+  <div class="controls">
+    <div class="opts">
+      <label class="opt"><input type="radio" name="q33" value="Broad"><span class="opt-inner"><span class="opt-label">Broad</span><span class="opt-desc">Most people in the market could see themselves in this group</span></span></label>
+      <label class="opt"><input type="radio" name="q33" value="Select"><span class="opt-inner"><span class="opt-label">Select</span><span class="opt-desc">A defined subset (lifestyle, demographic, interest-based)</span></span></label>
+      <label class="opt"><input type="radio" name="q33" value="Niche"><span class="opt-inner"><span class="opt-label">Niche</span><span class="opt-desc">A specific minority or culturally-distinct community</span></span></label>
+    </div>
+  </div>
+</div>
+  <div class="evid"><div class="evid-label">Required Evidence</div><textarea id="q33-evid" placeholder="Describe who is in the in-group (e.g. who they are, what they look like, what they value) and who would fall outside it."></textarea></div>
+
+<!-- Q34 (conditional: Q31 >= 1) -->
+<div class="card hidden" id="card-q34">
+  <div class="card-top">
+    <span class="q-num">Q34</span>
+    <div>
+      <div class="q-text">HOW is the in-group framed?</div>
+      <div class="q-boundary">Aspirational vs Affirming: is the viewer being shown a group they would like to JOIN (aspirational) or a group they are already IN and the ad is recognising them (affirming)?</div>
+    </div>
+  </div>
+  <div class="controls">
+    <div class="opts">
+      <label class="opt"><input type="radio" name="q34" value="Appealing / aspirational"><span class="opt-inner"><span class="opt-label">Appealing / aspirational</span><span class="opt-desc">Viewer would want to BELONG (something to become)</span></span></label>
+      <label class="opt"><input type="radio" name="q34" value="Affirming / belonging"><span class="opt-inner"><span class="opt-label">Affirming / belonging</span><span class="opt-desc">Viewer would feel SEEN by being recognised as part of this group</span></span></label>
+      <label class="opt"><input type="radio" name="q34" value="Neutral"><span class="opt-label">Neutral — group framed without evaluative valence</span></label>
+      <label class="opt"><input type="radio" name="q34" value="Unappealing / cautionary"><span class="opt-inner"><span class="opt-label">Unappealing / cautionary</span><span class="opt-desc">Viewer would NOT want to be part of this group</span></span></label>
+    </div>
+  </div>
+</div>
+  <div class="evid"><div class="evid-label">Required Evidence</div><textarea id="q34-evid" placeholder="Describe how the in-group is portrayed — is it warm, aspirational, celebratory, cautionary? Note the specific cues (music, lighting, performance) that signal the framing."></textarea></div>
+
+<!-- SECTION 10: THINKING & DIFFERENTIATION -->
+<div class="section-title">Thinking &amp; Differentiation</div>
+
+<!-- Q35 -->
+<div class="card">
+  <div class="card-top">
+    <span class="q-num">Q35</span>
+    <div>
+      <div class="q-text">How much interpretive work does the ad ask of the viewer?</div>
+    </div>
+  </div>
+  <div class="controls"><div class="scale" id="q35-scale"></div></div>
+</div>
+  <div class="evid"><div class="evid-label">Required Evidence</div><textarea id="q35-evid" placeholder="List each inference or connection the viewer must make for the ad to land, and note when each is required."></textarea></div>
+
+<!-- Q35a -->
+<div class="card">
+  <div class="card-top">
+    <span class="q-num added">Q35a</span>
+    <div>
+      <div class="q-text">Brand-specific thinking moment — does the ad invite the viewer to think specifically about the BRAND?</div>
+      <div class="q-criteria">Distinct from Q35 (general thinking).</div>
+    </div>
+  </div>
+  <div class="controls">
+    <div class="opts">
+      <label class="opt"><input type="radio" name="q35a" value="Yes"><span class="opt-label">Yes</span></label>
+      <label class="opt"><input type="radio" name="q35a" value="No"><span class="opt-label">No</span></label>
+      <label class="opt"><input type="radio" name="q35a" value="Partial"><span class="opt-label">Partial</span></label>
+    </div>
+  </div>
+</div>
+  <div class="evid"><div class="evid-label">Required Evidence</div><textarea id="q35a-evid" placeholder="If yes or partial: note the timestamp and describe what specifically invites the viewer to think about the brand itself (not just the story or joke)."></textarea></div>
+
+<!-- Q36 -->
+<div class="card">
+  <div class="card-top">
+    <span class="q-num">Q36</span>
+    <div>
+      <div class="q-text">Which BRAND DIFFERENTIATORS does the ad lead with? (Multi-select)</div>
+    </div>
+  </div>
+  <div class="controls">
+    <div class="opts">
+      <label class="opt"><input type="checkbox" name="q36" value="Point of view"><span class="opt-inner"><span class="opt-label">Point of view</span><span class="opt-desc">Values, lifestyle more associated with this brand than competitors</span></span></label>
+      <label class="opt"><input type="checkbox" name="q36" value="Unique benefit"><span class="opt-inner"><span class="opt-label">Unique benefit</span><span class="opt-desc">Benefit more unique to this brand vs competitors</span></span></label>
+      <label class="opt"><input type="checkbox" name="q36" value="Unique product feature"><span class="opt-inner"><span class="opt-label">Unique product feature</span><span class="opt-desc">Product feature more unique to this brand vs competitors</span></span></label>
+      <label class="opt"><input type="checkbox" name="q36" value="Evidence / credibility"><span class="opt-inner"><span class="opt-label">Evidence / credibility</span><span class="opt-desc">Unique to this brand</span></span></label>
+    </div>
+  </div>
+</div>
+  <div class="evid"><div class="evid-label">Required Evidence</div><textarea id="q36-evid" placeholder="For each differentiator selected, describe the moment in the ad that demonstrates it and confirm it is more associated with this brand than its competitors."></textarea></div>
+
+<!-- Q37 -->
+<div class="card">
+  <div class="card-top">
+    <span class="q-num">Q37</span>
+    <div>
+      <div class="q-text">How explicitly does the ad communicate a BENEFIT of the brand or product?</div>
+    </div>
+  </div>
+  <div class="controls"><div class="scale" id="q37-scale"></div></div>
+</div>
+  <div class="evid"><div class="evid-label">Required Evidence</div><textarea id="q37-evid" placeholder="State the benefit in one line. Note whether it is stated verbally, shown in action, or implied by the scenario, and when."></textarea></div>
+
+<!-- Q38 -->
+<div class="card">
+  <div class="card-top">
+    <span class="q-num">Q38</span>
+    <div>
+      <div class="q-text">What TYPE of benefit does the ad communicate? (Multi-select)</div>
+    </div>
+  </div>
+  <div class="controls">
+    <div class="opts">
+      <label class="opt"><input type="checkbox" name="q38" value="Functional"><span class="opt-inner"><span class="opt-label">Functional</span><span class="opt-desc">What the brand does (performance, reliability, value)</span></span></label>
+      <label class="opt"><input type="checkbox" name="q38" value="Experience"><span class="opt-inner"><span class="opt-label">Experience</span><span class="opt-desc">How the brand makes the user feel (sensory, emotional)</span></span></label>
+      <label class="opt"><input type="checkbox" name="q38" value="Image"><span class="opt-inner"><span class="opt-label">Image</span><span class="opt-desc">What the brand says about the user (status, identity, self-image)</span></span></label>
+      <label class="opt"><input type="checkbox" name="q38" value="Ideals"><span class="opt-inner"><span class="opt-label">Ideals</span><span class="opt-desc">How the brand aligns with values or aspirations</span></span></label>
+    </div>
+  </div>
+</div>
+  <div class="evid"><div class="evid-label">Required Evidence</div><textarea id="q38-evid" placeholder="For each benefit type selected, describe the specific moment or element in the ad that delivers it."></textarea></div>
+
+<!-- Q39 -->
+<div class="card">
+  <div class="card-top">
+    <span class="q-num">Q39</span>
+    <div>
+      <div class="q-text">Is the benefit framed as APPROACH (something to gain) or AVOIDANCE (something to avoid)?</div>
+    </div>
+  </div>
+  <div class="controls">
+    <div class="opts">
+      <label class="opt"><input type="radio" name="q39" value="Approach"><span class="opt-label">Approach — emphasises what the brand does, what users gain</span></label>
+      <label class="opt"><input type="radio" name="q39" value="Avoidance"><span class="opt-label">Avoidance — emphasises what the brand prevents, what users avoid</span></label>
+      <label class="opt"><input type="radio" name="q39" value="Both / mixed"><span class="opt-label">Both / mixed</span></label>
+    </div>
+  </div>
+</div>
+  <div class="evid"><div class="evid-label">Required Evidence</div><textarea id="q39-evid" placeholder="Identify the specific language or imagery that signals whether the ad is framing around gain or around prevention/avoidance."></textarea></div>
+
+<!-- SECTION 11: CTA & POINT OF VIEW -->
+<div class="section-title">CTA &amp; Point of View</div>
+
+<!-- Q40 -->
+<div class="card">
+  <div class="card-top">
+    <span class="q-num">Q40</span>
+    <div>
+      <div class="q-text">Is there an explicit call-to-action?</div>
+      <div class="q-criteria">Brand logo or tagline alone is NOT a CTA. URL with no action verb is borderline.</div>
+    </div>
+  </div>
+  <div class="controls">
+    <div class="opts">
+      <label class="opt"><input type="radio" name="q40" value="Yes"><span class="opt-label">Yes</span></label>
+      <label class="opt"><input type="radio" name="q40" value="No"><span class="opt-label">No</span></label>
+    </div>
+  </div>
+</div>
+  <div class="evid"><div class="evid-label">Required Evidence</div><textarea id="q40-evid" placeholder="If yes: write the CTA exactly as it appears, note when it appears, and classify the type (visit / download / offer / call / signup)."></textarea></div>
+
+<!-- Q41 -->
+<div class="card">
+  <div class="card-top">
+    <span class="q-num">Q41</span>
+    <div>
+      <div class="q-text">Does the ad express a point of view on beliefs, values, or lifestyle?</div>
+      <div class="q-criteria">IMPLIED values via scenario or casting alone = No. Explicit verbal/textual statement of belief, or a value VISIBLY enacted as a central theme = Yes.</div>
+    </div>
+  </div>
+  <div class="controls">
+    <div class="opts">
+      <label class="opt"><input type="radio" name="q41" value="Yes" onchange="updateConditionals()"><span class="opt-label">Yes</span></label>
+      <label class="opt"><input type="radio" name="q41" value="No" onchange="updateConditionals()"><span class="opt-label">No</span></label>
+      <label class="opt"><input type="radio" name="q41" value="Partial" onchange="updateConditionals()"><span class="opt-label">Partial</span></label>
+    </div>
+  </div>
+</div>
+  <div class="evid"><div class="evid-label">Required Evidence</div><textarea id="q41-evid" placeholder="State the point of view in one line and note when/how it is expressed. Is it stated verbally, written on screen, or enacted as a central theme?"></textarea></div>
+
+<!-- Q42 (conditional: Q41 = Yes or Partial) -->
+<div class="card hidden" id="card-q42">
+  <div class="card-top">
+    <span class="q-num">Q42</span>
+    <div>
+      <div class="q-text">How bold is this ad's point of view?</div>
+      <div class="q-boundary">Consensus→Soft: could a brand holding the OPPOSITE position credibly run a counter-ad? Yes = Soft preference or higher.
+Genuine→Polarising: would the brand expect non-trivial public backlash? Yes = Polarising.</div>
+    </div>
+  </div>
+  <div class="controls">
+    <div class="opts">
+      <label class="opt"><input type="radio" name="q42" value="Consensus"><span class="opt-inner"><span class="opt-label">Consensus</span><span class="opt-desc">States a value essentially nobody opposes (e.g. "family matters")</span></span></label>
+      <label class="opt"><input type="radio" name="q42" value="Soft preference"><span class="opt-inner"><span class="opt-label">Soft preference</span><span class="opt-desc">Takes a side on a low-stakes question (e.g. "minimalism over clutter")</span></span></label>
+      <label class="opt"><input type="radio" name="q42" value="Genuine stake"><span class="opt-inner"><span class="opt-label">Genuine stake</span><span class="opt-desc">Takes a side where reasonable people disagree</span></span></label>
+      <label class="opt"><input type="radio" name="q42" value="Polarising stake"><span class="opt-inner"><span class="opt-label">Polarising stake</span><span class="opt-desc">Takes a side a meaningful share would actively reject (political, ideological, identity-based)</span></span></label>
+    </div>
+  </div>
+</div>
+  <div class="evid"><div class="evid-label">Required Evidence</div><textarea id="q42-evid" placeholder="Paraphrase the POV. Could a brand holding the opposite position credibly run a counter-ad? Would this brand expect public backlash? Use these tests to justify the tier."></textarea></div>
+
+<!-- Q43 (conditional: Q41 = Yes or Partial) -->
+<div class="card hidden" id="card-q43">
+  <div class="card-top">
+    <span class="q-num">Q43</span>
+    <div>
+      <div class="q-text">How load-bearing is the POV within the ad?</div>
+    </div>
+  </div>
+  <div class="controls"><div class="scale" id="q43-scale"></div></div>
+</div>
+  <div class="evid"><div class="evid-label">Required Evidence</div><textarea id="q43-evid" placeholder="Note the timestamps where the POV is actively foregrounded. Is it the organising idea of the ad, or does it appear in support of something else?"></textarea></div>
+
+<!-- SECTION 12: LIFESTYLE CUEING -->
+<div class="section-title">Lifestyle Cueing</div>
+
+<!-- Q44 -->
+<div class="card">
+  <div class="card-top">
+    <span class="q-num">Q44</span>
+    <div>
+      <div class="q-text">Does the ad use coordinated LIFESTYLE CUES to signal a particular group identity?</div>
+      <div class="q-boundary">Incidental→Coordinated: are cues pulling in the same direction (specific group identified) or scattered (general aesthetic)?</div>
+    </div>
+  </div>
+  <div class="controls">
+    <div class="opts">
+      <label class="opt"><input type="radio" name="q44" value="Absent" onchange="updateConditionals()"><span class="opt-label">Absent — no lifestyle cueing</span></label>
+      <label class="opt"><input type="radio" name="q44" value="Incidental" onchange="updateConditionals()"><span class="opt-label">Incidental — some lifestyle cues but not coordinated around a single group</span></label>
+      <label class="opt"><input type="radio" name="q44" value="Coordinated" onchange="updateConditionals()"><span class="opt-label">Coordinated — multiple cues point at a specific group consistently</span></label>
+      <label class="opt"><input type="radio" name="q44" value="Load-bearing" onchange="updateConditionals()"><span class="opt-label">Load-bearing — the lifestyle signalling IS the primary mechanism</span></label>
+    </div>
+  </div>
+</div>
+  <div class="evid"><div class="evid-label">Required Evidence</div><textarea id="q44-evid" placeholder="List the lifestyle markers present (clothing, setting, objects, music, activities) and note when they appear. Describe the group they imply and whether the cues point consistently in the same direction."></textarea></div>
+
+<!-- Q45 (conditional: Q44 = Incidental/Coordinated/Load-bearing) -->
+<div class="card hidden" id="card-q45">
+  <div class="card-top">
+    <span class="q-num">Q45</span>
+    <div>
+      <div class="q-text">In ≤15 words: what lifestyle or group of people does the cueing point at?</div>
+    </div>
+  </div>
+  <div class="controls">
+    <textarea id="q45-val" placeholder="e.g. Young urban professionals who prioritise sustainability and aesthetic minimalism" style="min-height:48px"></textarea>
+  </div>
+</div>
+
+<!-- Q46 (conditional: Q44 = Incidental/Coordinated/Load-bearing) -->
+<div class="card hidden" id="card-q46">
+  <div class="card-top">
+    <span class="q-num">Q46</span>
+    <div>
+      <div class="q-text">Which best describes the type of group the lifestyle cueing points at? (Multi-select)</div>
+    </div>
+  </div>
+  <div class="controls">
+    <div class="opts">
+      <label class="opt"><input type="checkbox" name="q46" value="Socio-economic status"><span class="opt-label">Socio-economic status</span></label>
+      <label class="opt"><input type="checkbox" name="q46" value="Urban/Rural/Geographic"><span class="opt-label">Urban / Rural / Geographic</span></label>
+      <label class="opt"><input type="checkbox" name="q46" value="Race/Ethnicity"><span class="opt-label">Race / Ethnicity</span></label>
+      <label class="opt"><input type="checkbox" name="q46" value="Gender"><span class="opt-label">Gender</span></label>
+      <label class="opt"><input type="checkbox" name="q46" value="Socio-political views"><span class="opt-label">Socio-political views</span></label>
+      <label class="opt"><input type="checkbox" name="q46" value="Age"><span class="opt-label">Age</span></label>
+      <label class="opt"><input type="checkbox" name="q46" value="Family status"><span class="opt-label">Family status</span></label>
+      <label class="opt"><input type="checkbox" name="q46" value="Image/Fashion/Music choices"><span class="opt-label">Image / Fashion / Music choices</span></label>
+      <label class="opt"><input type="checkbox" name="q46" value="Other"><span class="opt-label">Other (specify in evidence)</span></label>
+    </div>
+  </div>
+</div>
+  <div class="evid"><div class="evid-label">Required Evidence</div><textarea id="q46-evid" placeholder="Note any additional detail about which dimension of group identity the cueing is anchored to."></textarea></div>
+
+<!-- SECTION 13: MINORITY AUDIENCE -->
+<div class="section-title">Minority Audience</div>
+
+<!-- Q47 -->
+<div class="card">
+  <div class="card-top">
+    <span class="q-num">Q47</span>
+    <div>
+      <div class="q-text">Does the ad explicitly address a MINORITY or culturally-distinct audience?</div>
+      <div class="q-criteria">Note: minority can be any identifiable subset of the population (not just racial).</div>
+    </div>
+  </div>
+  <div class="controls">
+    <div class="opts">
+      <label class="opt"><input type="radio" name="q47" value="Yes" onchange="updateConditionals()"><span class="opt-label">Yes</span></label>
+      <label class="opt"><input type="radio" name="q47" value="No" onchange="updateConditionals()"><span class="opt-label">No</span></label>
+    </div>
+  </div>
+</div>
+  <div class="evid"><div class="evid-label">Required Evidence</div><textarea id="q47-evid" placeholder="Name the minority or culturally-distinct group the ad is calibrated for, and describe how the ad signals this — through language, casting, references, or setting."></textarea></div>
+
+<!-- Q48 (conditional: Q47 = Yes) -->
+<div class="card hidden" id="card-q48">
+  <div class="card-top">
+    <span class="q-num">Q48</span>
+    <div>
+      <div class="q-text">Does the ad provide context that makes its cultural content legible to outsiders?</div>
+      <div class="q-criteria">This is NOT about whether outsiders LIKE the ad — it is about whether they can DECODE it.</div>
+    </div>
+  </div>
+  <div class="controls">
+    <div class="opts">
+      <label class="opt"><input type="radio" name="q48" value="Fully accessible"><span class="opt-inner"><span class="opt-label">Fully accessible</span><span class="opt-desc">Outsiders can engage without missing anything important</span></span></label>
+      <label class="opt"><input type="radio" name="q48" value="Partially accessible"><span class="opt-inner"><span class="opt-label">Partially accessible</span><span class="opt-desc">Outsiders can follow the story but miss specific resonance</span></span></label>
+      <label class="opt"><input type="radio" name="q48" value="Insider-only"><span class="opt-inner"><span class="opt-label">Insider-only</span><span class="opt-desc">Outsiders will not get the central point</span></span></label>
+    </div>
+  </div>
+</div>
+
+<!-- SECTION 14: OVERALL STRATEGY -->
+<div class="section-title">Overall Strategy (complete last)</div>
+
+<!-- Q49 -->
+<div class="card">
+  <div class="card-top">
+    <span class="q-num">Q49</span>
+    <div>
+      <div class="q-text">What is the DOMINANT strategy driving this ad? (Synthesis — complete after all other questions)</div>
+      <div class="q-boundary">Joke/Irony vs Emotional Linear: remove the humour — does the ad still work? Yes = Emotional Linear with humour on top. No = Joke/Irony.
+Functional RTB vs Problem-Solution: making a claim about the product (Functional RTB), or solving the protagonist's problem (Problem-Solution)?
+Shared Values vs Emotional Elliptical: can you state the ad's position in one declarative sentence the brand would sign? Yes = Shared Values. No = Emotional Elliptical.
+Emotional Linear vs Problem-Solution: does the brand drive the resolution? Brand drives = Problem-Solution. Character resolves own arc = Emotional Linear.</div>
+    </div>
+  </div>
+  <div class="controls">
+    <div class="opts">
+      <label class="opt"><input type="radio" name="q49" value="Emotional Linear"><span class="opt-inner"><span class="opt-label">Emotional Linear</span><span class="opt-desc">Character-driven causal narrative, protagonist changes state</span></span></label>
+      <label class="opt"><input type="radio" name="q49" value="Emotional Elliptical"><span class="opt-inner"><span class="opt-label">Emotional Elliptical</span><span class="opt-desc">Meaning constructed by viewer through metaphor or semantic distance, not causal</span></span></label>
+      <label class="opt"><input type="radio" name="q49" value="Joke / Irony"><span class="opt-inner"><span class="opt-label">Joke / Irony</span><span class="opt-desc">Humour or incongruity-resolution is the dominant engagement mechanism</span></span></label>
+      <label class="opt"><input type="radio" name="q49" value="Functional RTB"><span class="opt-inner"><span class="opt-label">Functional RTB</span><span class="opt-desc">Product claim, demonstration, or feature-benefit reasoning is primary</span></span></label>
+      <label class="opt"><input type="radio" name="q49" value="Shared Values"><span class="opt-inner"><span class="opt-label">Shared Values</span><span class="opt-desc">Brand positioning through values alignment, without clear product claim or character arc</span></span></label>
+      <label class="opt"><input type="radio" name="q49" value="Problem-Solution"><span class="opt-inner"><span class="opt-label">Problem-Solution</span><span class="opt-desc">Defined problem state resolved by brand intervention</span></span></label>
+    </div>
+  </div>
+</div>
+  <div class="evid"><div class="evid-label">Required Evidence</div><textarea id="q49-evid" placeholder="Name the dominant strategy and explain in one line why it fits. List the alternatives you considered and why each was ruled out."></textarea></div>
+
+<!-- Q50 -->
+<div class="card">
+  <div class="card-top">
+    <span class="q-num">Q50</span>
+    <div>
+      <div class="q-text">What is this ad primarily ABOUT — the brand or the product?</div>
+    </div>
+  </div>
+  <div class="controls">
+    <div class="opts">
+      <label class="opt"><input type="radio" name="q50" value="Product"><span class="opt-inner"><span class="opt-label">Product</span><span class="opt-desc">Physical object, feature, or service mechanism is the primary subject</span></span></label>
+      <label class="opt"><input type="radio" name="q50" value="Brand"><span class="opt-inner"><span class="opt-label">Brand</span><span class="opt-desc">Brand identity, values, or personality is the primary subject</span></span></label>
+      <label class="opt"><input type="radio" name="q50" value="Both equally"><span class="opt-label">Both equally — neither clearly dominates</span></label>
+    </div>
+  </div>
+</div>
+  <div class="evid"><div class="evid-label">Required Evidence</div><textarea id="q50-evid" placeholder="State which is the primary subject and give a rough sense of the split (e.g. '70% brand values, 30% product feature')."></textarea></div>
+
+<!-- SUBMIT -->
+<div class="submit-bar">
+  <div class="submit-note">Submitting sends your responses to the central dataset. You can still download your own CSV after submitting.</div>
+  <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+    <button class="btn btn-submit" onclick="submitForm()">Submit responses</button>
+    <button class="btn btn-csv-submit" onclick="downloadCSV()">↓ My CSV</button>
+    <span id="submit-status"></span>
+  </div>
+</div>
+
+</div><!-- /container -->
+
+<script>
+// ─── CONFIG — paste your Apps Script deployment URL here ─────────────────────
+const SUBMIT_URL = 'https://script.google.com/macros/s/AKfycbylBx9sZSZxChy1AzUojwBDwKVjhSV6koozzXNz-w73_rka2-AzJmVKoCG-WZJ9uWhc/exec';
+
+// ─── SCALE DEFINITIONS ────────────────────────────────────────────────────────
+const SCALES = {
+  q8:   { labels: ['0\nNo obstacle','1\nMinor friction','2\nReal obstacle','3\nSevere obstacle','4\nExistential'] },
+  q9:   { labels: ['0\nNo reasons','1\nImplied only','2\nShown, not pressed','3\nShown & reinforced','4\nCentral principle'] },
+  q10:  { labels: ['0\nNo peak','1\nSoft peak','2\nStrong peak','3\nDefining peak'] },
+  q10a: { labels: ['0\nFlat','1\nMild moment','2\nClear peak','3\nStrong peak','4\nDefining moment'] },
+  q24:  { labels: ['0\nNo reference','1\nDecorative','2\nEnhancing','3\nRequired'] },
+  q25:  { labels: ['0\nConventional','1\nPolished/typical','2\nDistinctive','3\nStrongly distinctive','4\nSingular'] },
+  q26:  { labels: ['0\nTypical category','1\nSome departure','2\nClearly departs','3\nUnprecedented'] },
+  q30:  { labels: ['0\nNo understanding','1\nSurface','2\nStated','3\nPenetrating'] },
+  q30a: { labels: ['0\nGeneric','1\nSome specifics','2\nDensely textured','3\nDocumentary-specific'] },
+  q31:  { labels: ['0\nNo in-group','1\nImplied','2\nClear','3\nForegrounded'] },
+  q32:  { labels: ['0\nNo out-group','1\nImplicit','2\nVisible','3\nDefining'] },
+  q35:  { labels: ['0\nNone','1\nLight','2\nModerate','3\nHeavy','4\nPuzzle IS the ad'] },
+  q37:  { labels: ['0\nNo benefit','1\nImplied','2\nClear','3\nStrongly stated','4\nCentral idea'] },
+  q43:  { labels: ['0\nIncidental','1\nSupporting','2\nSignificant','3\nPrimary'] },
+};
+
+function buildScales() {
+  for (const [id, def] of Object.entries(SCALES)) {
+    const el = document.getElementById(id + '-scale');
+    if (!el) continue;
+    el.innerHTML = def.labels.map((lbl, i) => {
+      const [num, ...rest] = lbl.split('\n');
+      return `<div class="scale-item">
+        <input type="radio" name="${id}" id="${id}-${i}" value="${i}">
+        <label for="${id}-${i}">
+          <span class="scale-num">${num}</span>
+          <span class="scale-lbl">${rest.join(' ')}</span>
+        </label>
+      </div>`;
+    }).join('');
+    // add change listener for Q31 conditional
+    if (id === 'q31' || id === 'q32') {
+      el.querySelectorAll('input').forEach(r => r.addEventListener('change', updateConditionals));
+    }
+  }
+}
+
+// ─── ELEMENT BLOCKS (Q1) ──────────────────────────────────────────────────────
+let elementCount = 0;
+
+function addElement() {
+  elementCount++;
+  const id = elementCount;
+  const list = document.getElementById('elements-list');
+  const block = document.createElement('div');
+  block.className = 'el-block';
+  block.id = 'el-' + id;
+  block.innerHTML = `
+    <div class="el-header">
+      <span class="el-num">Element ${id}</span>
+      <button class="el-remove" onclick="removeElement(${id})">✕ Remove</button>
+    </div>
+    <div class="el-fields">
+      <div>
+        <div class="el-label">Description</div>
+        <textarea id="el${id}-desc" placeholder="What the element is, in your own words…" style="min-height:52px"></textarea>
+      </div>
+      <div class="el-row">
+        <div>
+          <div class="el-label">Timestamp (e.g. 0:09)</div>
+          <input type="text" id="el${id}-ts" placeholder="0:00">
+        </div>
+        <div>
+          <div class="el-label">Humorous?</div>
+          <div class="yn-group" style="margin-top:6px">
+            <input class="yn-opt" type="radio" name="el${id}-hum" id="el${id}-hum-y" value="Yes"><label for="el${id}-hum-y">Yes</label>
+            <input class="yn-opt" type="radio" name="el${id}-hum" id="el${id}-hum-n" value="No"><label for="el${id}-hum-n">No</label>
+          </div>
+        </div>
+      </div>
+      <div>
+        <div class="el-label">Classification (multi-select)</div>
+        <div style="display:flex;flex-direction:column;gap:4px;margin-top:4px">
+          ${['Visual/Physical — something physically impossible or visually unusual happens',
+             'Unusual Combination — two ideas/elements not normally paired appear together',
+             'Story turn — narrative goes somewhere the setup did not predict',
+             'Tone / Category — ad does not look or feel like a typical ad for this product type',
+             'Other (specify)'].map((opt,i) => {
+            const val = opt.split(' — ')[0];
+            const desc = opt.includes(' — ') ? opt.split(' — ')[1] : '';
+            return `<label class="opt" style="padding:6px 8px"><input type="checkbox" name="el${id}-cls" value="${val}">
+              <span class="opt-inner"><span class="opt-label">${val}</span>${desc ? `<span class="opt-desc">${desc}</span>` : ''}</span></label>`;
+          }).join('')}
+        </div>
+        <input type="text" id="el${id}-cls-other" placeholder="Specify other classification…" style="margin-top:5px;display:none">
+      </div>
+      <div>
+        <div class="el-label">Severity</div>
+        <div class="pill-group" style="margin-top:5px">
+          ${['Mild','Moderate','Extreme'].map(s =>
+            `<input class="pill-radio" type="radio" name="el${id}-sev" id="el${id}-sev-${s}" value="${s}">
+             <label for="el${id}-sev-${s}">${s}</label>`
+          ).join('')}
+        </div>
+        <div style="font-size:10.5px;color:#94a3b8;margin-top:4px">
+          Mild = contained twist; Moderate = clear violation, viewer recalibrates; Extreme = fundamental reframe of ad category
+        </div>
+      </div>
+      <div class="piv-row" id="el${id}-piv-row">
+        <div class="el-label">Pivotal? <span style="font-weight:400;color:#94a3b8">Select the most dominant or intense element — exactly one must be Yes.</span></div>
+        <div class="pill-group" style="margin-top:5px">
+          <input class="pill-radio" type="radio" name="el${id}-piv" id="el${id}-piv-y" value="Yes">
+          <label for="el${id}-piv-y">Yes — this is the pivotal element</label>
+          <input class="pill-radio" type="radio" name="el${id}-piv" id="el${id}-piv-n" value="No">
+          <label for="el${id}-piv-n">No</label>
+        </div>
+      </div>
+    </div>`;
+  list.appendChild(block);
+
+  // Other classification field toggle
+  block.querySelectorAll('input[name="el' + id + '-cls"]').forEach(cb => {
+    cb.addEventListener('change', () => {
+      const otherCb = block.querySelector('input[value="Other"]');
+      const otherField = document.getElementById('el' + id + '-cls-other');
+      if (otherField) otherField.style.display = otherCb && otherCb.checked ? 'block' : 'none';
+    });
+  });
+
+  // opt visual toggle
+  block.querySelectorAll('.opt').forEach(opt => {
+    opt.addEventListener('click', () => {
+      const inp = opt.querySelector('input');
+      if (!inp) return;
+      if (inp.type === 'radio') {
+        const name = inp.name;
+        block.querySelectorAll(`input[name="${name}"]`).forEach(r => r.closest('.opt')?.classList.remove('sel'));
+        opt.classList.add('sel');
+      } else {
+        opt.classList.toggle('sel', inp.checked);
+      }
+    });
+  });
+
+  // Pivotal enforcement: clicking Yes on this element sets No on all others
+  const pivYes = document.getElementById('el' + id + '-piv-y');
+  if (pivYes) {
+    pivYes.addEventListener('change', () => {
+      if (pivYes.checked) setPivotal(id);
+    });
+  }
+
+  // Update Q4 context when description changes
+  const descTA = document.getElementById('el' + id + '-desc');
+  if (descTA) descTA.addEventListener('input', updateQ4Context);
+
+  updatePivotalRows();
+  updateConditionals();
+  autoSave();
+}
+
+function removeElement(id) {
+  document.getElementById('el-' + id)?.remove();
+  updatePivotalRows();
+  updateQ4Context();
+  updateConditionals();
+  autoSave();
+}
+
+// When Yes is chosen on element `selectedId`, set all other elements to No
+function setPivotal(selectedId) {
+  document.querySelectorAll('.el-block').forEach(block => {
+    const bid = block.id.replace('el-', '');
+    if (String(bid) !== String(selectedId)) {
+      const noRadio = document.getElementById('el' + bid + '-piv-n');
+      if (noRadio) noRadio.checked = true;
+    }
+  });
+  updateQ4Context();
+  autoSave();
+}
+
+// Show/hide pivotal row based on element count; hide when only 1 (implicitly pivotal)
+function updatePivotalRows() {
+  const blocks = document.querySelectorAll('.el-block');
+  const multi = blocks.length >= 2;
+  blocks.forEach(block => {
+    const bid = block.id.replace('el-', '');
+    const row = document.getElementById('el' + bid + '-piv-row');
+    if (row) row.classList.toggle('show', multi);
+  });
+  updateQ4Context();
+}
+
+// Show the pivotal element's description inside Q4
+function updateQ4Context() {
+  const ctx = document.getElementById('q4-pivotal-context');
+  if (!ctx) return;
+  const blocks = document.querySelectorAll('.el-block');
+  if (blocks.length === 0) { ctx.className = 'q4-context'; return; }
+
+  if (blocks.length === 1) {
+    // Single element is implicitly pivotal
+    const bid = blocks[0].id.replace('el-', '');
+    const desc = (document.getElementById('el' + bid + '-desc')?.value || '').trim();
+    ctx.className = 'q4-context visible';
+    ctx.innerHTML = `<span class="ctx-label">Coding tension for (only element — implicitly pivotal):</span>
+      <span class="ctx-desc">${desc || '<em>No description entered yet</em>'}</span>`;
+    return;
+  }
+
+  // Multiple elements — find the one marked Yes
+  let pivDesc = null, pivNum = null;
+  blocks.forEach((block, i) => {
+    const bid = block.id.replace('el-', '');
+    const pivYes = document.getElementById('el' + bid + '-piv-y');
+    if (pivYes && pivYes.checked) {
+      pivDesc = (document.getElementById('el' + bid + '-desc')?.value || '').trim();
+      pivNum = i + 1;
+    }
+  });
+
+  ctx.className = 'q4-context visible';
+  if (pivNum !== null) {
+    ctx.innerHTML = `<span class="ctx-label">Coding tension for pivotal element (Element ${pivNum}):</span>
+      <span class="ctx-desc">${pivDesc || '<em>No description entered yet — add it in Q1</em>'}</span>`;
+  } else {
+    ctx.innerHTML = `<span class="ctx-warn">⚠ No pivotal element selected yet — go back to Q1 and mark one element as Yes before completing Q4.</span>`;
+  }
+}
+
+function getElementCount() {
+  return document.getElementById('elements-list').querySelectorAll('.el-block').length;
+}
+
+// ─── CONDITIONAL VISIBILITY ───────────────────────────────────────────────────
+function updateConditionals() {
+  // Q4: show if any elements exist
+  const hasElements = getElementCount() > 0;
+  document.getElementById('card-q4').classList.toggle('hidden', !hasElements);
+
+  // Q20: show if Q19 = Verbally
+  const q19 = getRadio('q19');
+  document.getElementById('card-q20').classList.toggle('hidden', q19 !== 'Verbally');
+
+  // Q22–Q24: show if Q21 has cultural element (not "None of the above" only)
+  const q21vals = getCheckboxes('q21');
+  const hasCultural = q21vals.some(v => v !== 'None of the above');
+  document.getElementById('card-q22').classList.toggle('hidden', !hasCultural);
+  document.getElementById('card-q23').classList.toggle('hidden', !hasCultural);
+  document.getElementById('card-q24').classList.toggle('hidden', !hasCultural);
+
+  // Q33, Q34: show if Q31 >= 1
+  const q31 = getScaleVal('q31');
+  const showQ33Q34 = q31 !== null && q31 >= 1;
+  document.getElementById('card-q33').classList.toggle('hidden', !showQ33Q34);
+  document.getElementById('card-q34').classList.toggle('hidden', !showQ33Q34);
+
+  // Q42, Q43: show if Q41 = Yes or Partial
+  const q41 = getRadio('q41');
+  const showPOV = q41 === 'Yes' || q41 === 'Partial';
+  document.getElementById('card-q42').classList.toggle('hidden', !showPOV);
+  document.getElementById('card-q43').classList.toggle('hidden', !showPOV);
+
+  // Q45, Q46: show if Q44 != Absent
+  const q44 = getRadio('q44');
+  const showLifestyle = q44 && q44 !== 'Absent';
+  document.getElementById('card-q45').classList.toggle('hidden', !showLifestyle);
+  document.getElementById('card-q46').classList.toggle('hidden', !showLifestyle);
+
+  // Q48: show if Q47 = Yes
+  const q47 = getRadio('q47');
+  document.getElementById('card-q48').classList.toggle('hidden', q47 !== 'Yes');
+
+  // Q13 other
+  const q13 = getRadio('q13');
+  document.getElementById('q13-other').classList.toggle('show', q13 === 'Other');
+}
+
+// ─── D2 TIER DERIVATION ───────────────────────────────────────────────────────
+function deriveD2() {
+  const q16 = getRadio('q16');
+  const q17 = getRadio('q17');
+  const badge = document.getElementById('q17-derived');
+  if (!q16 || !q17) { badge.className = 'derived'; return; }
+  let tier, cls, label;
+  if (q16 === 'Lots' && q17 === 'Lots')        { tier = 'STRUCTURAL'; cls = 'structural'; label = 'D2 Tier: STRUCTURAL — ad does not work without this brand, and a competitor cannot swap in'; }
+  else if (q16 === 'Not lots' && q17 === 'Lots') { tier = 'ACCRUED'; cls = 'accrued'; label = 'D2 Tier: ACCRUED — brand has earned association through repeated use; competitor swap would feel wrong'; }
+  else if (q16 === 'Not lots' && q17 === 'Not lots') { tier = 'REPLACEABLE'; cls = 'replaceable'; label = 'D2 Tier: REPLACEABLE — a competitor could run this ad'; }
+  else { tier = 'FLAG FOR QA'; cls = 'flagged'; label = 'D2 Tier: FLAG FOR QA — Q16=Lots but Q17=Not lots. Default REPLACEABLE unless specifically justified.'; }
+  badge.className = 'derived show ' + cls;
+  badge.textContent = label;
+}
+
+// ─── DATA HELPERS ─────────────────────────────────────────────────────────────
+function getRadio(name) {
+  const el = document.querySelector(`input[name="${name}"]:checked`);
+  return el ? el.value : null;
+}
+function getCheckboxes(name) {
+  return [...document.querySelectorAll(`input[name="${name}"]:checked`)].map(e => e.value);
+}
+function getScaleVal(name) {
+  const el = document.querySelector(`input[name="${name}"]:checked`);
+  return el ? parseInt(el.value) : null;
+}
+function getText(id) {
+  const el = document.getElementById(id);
+  return el ? el.value.trim() : '';
+}
+
+function collectElements() {
+  const blocks = document.querySelectorAll('.el-block');
+  return [...blocks].map(block => {
+    const id = block.id.replace('el-', '');
+    return {
+      description: getText('el' + id + '-desc'),
+      timestamp: getText('el' + id + '-ts'),
+      classification: [...block.querySelectorAll(`input[name="el${id}-cls"]:checked`)].map(e => e.value),
+      classification_other: getText('el' + id + '-cls-other'),
+      humorous: getRadioInBlock(block, 'el' + id + '-hum'),
+      severity: getRadioInBlock(block, 'el' + id + '-sev'),
+      pivotal: getRadioInBlock(block, 'el' + id + '-piv'),
+    };
+  });
+}
+function getRadioInBlock(block, name) {
+  const el = block.querySelector(`input[name="${name}"]:checked`);
+  return el ? el.value : null;
+}
+
+// ─── BUILD JSON ───────────────────────────────────────────────────────────────
+function buildJSON() {
+  const elements = collectElements();
+  return {
+    metadata: {
+      ad_id: getText('ad_id'),
+      coder_name: getText('coder_name'),
+      date: getText('code_date'),
+      exported_at: new Date().toISOString(),
+    },
+    q1_unexpected_elements: elements,
+    q1_element_count: elements.length,
+    q4_dramatic_tension: { mechanisms: getCheckboxes('q4'), evidence: getText('q4-evid') },
+    q5_character_structure: { value: getRadio('q5'), evidence: getText('q5-evid') },
+    q5a_protagonist_clarity: { value: getRadio('q5a'), evidence: getText('q5a-evid') },
+    q6_protagonist_goal: { value: getRadio('q6'), evidence: getText('q6-evid') },
+    q7_stakes: { values: getCheckboxes('q7'), evidence: getText('q7-evid') },
+    q8_obstacle: { score: getScaleVal('q8'), antagonist_present: getRadio('q8-antag'), evidence: getText('q8-evid') },
+    q9_viewer_care: { score: getScaleVal('q9'), evidence: getText('q9-evid') },
+    q10_peak_moment: { score: getScaleVal('q10'), evidence: getText('q10-evid') },
+    q10a_emotional_peak: { score: getScaleVal('q10a'), evidence: getText('q10a-evid') },
+    q11_resolution_type: { value: getRadio('q11'), evidence: getText('q11-evid') },
+    q12_resolution_locus: { value: getRadio('q12'), evidence: getText('q12-evid') },
+    q13_tone: { value: getRadio('q13'), other: getText('q13-other-val'), evidence: getText('q13-evid') },
+    q14_brand_role: { value: getRadio('q14'), evidence: getText('q14-evid') },
+    q15_brand_narrative_position: { values: getCheckboxes('q15'), evidence: getText('q15-evid') },
+    q16_brand_swap_a: { value: getRadio('q16'), evidence: getText('q16-evid') },
+    q17_brand_swap_b: { value: getRadio('q17'), derived_d2_tier: document.getElementById('q17-derived').textContent.replace('D2 Tier: ','').split(' —')[0] || null, evidence: getText('q17-evid') },
+    q18_brand_dimension: { values: getCheckboxes('q18'), evidence: getText('q18-evid') },
+    q19_communication_mode: { value: getRadio('q19'), evidence: getText('q19-evid') },
+    q20_verbal_speaker: { value: getRadio('q20'), evidence: getText('q20-evid') },
+    q21_cultural_elements: { values: getCheckboxes('q21'), evidence: getText('q21-evid') },
+    q22_prior_knowledge_requirement: { value: getRadio('q22'), evidence: getText('q22-evid') },
+    q23_cultural_reference_type: { values: getCheckboxes('q23'), evidence: getText('q23-evid') },
+    q24_cultural_reference_load: { score: getScaleVal('q24'), evidence: getText('q24-evid') },
+    q25_visual_unusualness: { score: getScaleVal('q25'), evidence: getText('q25-evid') },
+    q26_visual_category_difference: { score: getScaleVal('q26'), evidence: getText('q26-evid') },
+    q28_first_5_seconds: { values: getCheckboxes('q28'), evidence: getText('q28-evid') },
+    q29_message_clarity: { value: getRadio('q29'), evidence: getText('q29-evid') },
+    q30_audience_insight: { score: getScaleVal('q30'), evidence: getText('q30-evid') },
+    q30a_target_specificity: { score: getScaleVal('q30a'), evidence: getText('q30a-evid') },
+    q31_in_group: { score: getScaleVal('q31'), evidence: getText('q31-evid') },
+    q32_out_group: { score: getScaleVal('q32'), evidence: getText('q32-evid') },
+    q33_group_breadth: { value: getRadio('q33'), evidence: getText('q33-evid') },
+    q34_group_framing: { value: getRadio('q34'), evidence: getText('q34-evid') },
+    q35_interpretive_work: { score: getScaleVal('q35'), evidence: getText('q35-evid') },
+    q35a_brand_thinking_moment: { value: getRadio('q35a'), evidence: getText('q35a-evid') },
+    q36_brand_differentiators: { values: getCheckboxes('q36'), evidence: getText('q36-evid') },
+    q37_benefit_clarity: { score: getScaleVal('q37'), evidence: getText('q37-evid') },
+    q38_benefit_type: { values: getCheckboxes('q38'), evidence: getText('q38-evid') },
+    q39_benefit_framing: { value: getRadio('q39'), evidence: getText('q39-evid') },
+    q40_cta: { value: getRadio('q40'), evidence: getText('q40-evid') },
+    q41_pov: { value: getRadio('q41'), evidence: getText('q41-evid') },
+    q42_pov_boldness: { value: getRadio('q42'), evidence: getText('q42-evid') },
+    q43_pov_centrality: { score: getScaleVal('q43'), evidence: getText('q43-evid') },
+    q44_lifestyle_cues: { value: getRadio('q44'), evidence: getText('q44-evid') },
+    q45_lifestyle_description: getText('q45-val'),
+    q46_lifestyle_group_type: { values: getCheckboxes('q46'), evidence: getText('q46-evid') },
+    q47_minority_audience: { value: getRadio('q47'), evidence: getText('q47-evid') },
+    q48_minority_accessibility: { value: getRadio('q48'), evidence: getText('q48-evid') },
+    q49_dominant_strategy: { value: getRadio('q49'), evidence: getText('q49-evid') },
+    q50_brand_product_focus: { value: getRadio('q50'), evidence: getText('q50-evid') },
+  };
+}
+
+// ─── SUBMIT TO GOOGLE SHEETS ──────────────────────────────────────────────────
+async function submitForm() {
+  const status = document.getElementById('submit-status');
+  const btn = document.querySelector('.btn-submit');
+
+  if (!SUBMIT_URL) {
+    status.className = 'err';
+    status.textContent = '⚠ No submission URL configured yet.';
+    return;
+  }
+
+  const adId = getText('ad_id');
+  if (!adId) {
+    status.className = 'err';
+    status.textContent = '⚠ Please enter an Ad ID before submitting.';
+    return;
+  }
+
+  status.className = 'sending';
+  status.textContent = 'Sending…';
+  btn.disabled = true;
+
+  try {
+    await fetch(SUBMIT_URL, {
+      method: 'POST',
+      mode: 'no-cors',           // required for Apps Script cross-origin
+      headers: { 'Content-Type': 'text/plain' },
+      body: JSON.stringify(buildJSON()),
+    });
+    // no-cors means we can't read the response, but if no error was thrown it went through
+    status.className = 'ok';
+    status.textContent = '✓ Submitted successfully';
+    btn.textContent = 'Submitted ✓';
+  } catch (err) {
+    status.className = 'err';
+    status.textContent = '✗ Submission failed — please download your CSV as a backup.';
+    btn.disabled = false;
+  }
+}
+
+// ─── EXPORT JSON ──────────────────────────────────────────────────────────────
+function downloadJSON() {
+  const data = buildJSON();
+  const fname = (data.metadata.ad_id || 'qre') + '_' + (data.metadata.date || today()) + '.json';
+  downloadFile(JSON.stringify(data, null, 2), fname, 'application/json');
+}
+
+// ─── EXPORT CSV ───────────────────────────────────────────────────────────────
+function downloadCSV() {
+  const d = buildJSON();
+  const rows = [['field','value','evidence']];
+  function addRow(key, val, evid) {
+    rows.push([key, val == null ? '' : String(val), evid || '']);
+  }
+  addRow('ad_id', d.metadata.ad_id);
+  addRow('coder_name', d.metadata.coder_name);
+  addRow('date', d.metadata.date);
+  addRow('exported_at', d.metadata.exported_at);
+  addRow('q1_element_count', d.q1_element_count);
+  d.q1_unexpected_elements.forEach((el, i) => {
+    const n = i + 1;
+    addRow(`q1_el${n}_description`, el.description);
+    addRow(`q1_el${n}_timestamp`, el.timestamp);
+    addRow(`q1_el${n}_classification`, el.classification.join('|'));
+    addRow(`q1_el${n}_classification_other`, el.classification_other);
+    addRow(`q1_el${n}_humorous`, el.humorous);
+    addRow(`q1_el${n}_severity`, el.severity);
+    addRow(`q1_el${n}_pivotal`, el.pivotal);
+  });
+  addRow('q4_dramatic_tension', d.q4_dramatic_tension.mechanisms.join('|'), d.q4_dramatic_tension.evidence);
+  addRow('q5_character_structure', d.q5_character_structure.value, d.q5_character_structure.evidence);
+  addRow('q5a_protagonist_clarity', d.q5a_protagonist_clarity.value, d.q5a_protagonist_clarity.evidence);
+  addRow('q6_protagonist_goal', d.q6_protagonist_goal.value, d.q6_protagonist_goal.evidence);
+  addRow('q7_stakes', d.q7_stakes.values.join('|'), d.q7_stakes.evidence);
+  addRow('q8_obstacle_score', d.q8_obstacle.score, d.q8_obstacle.evidence);
+  addRow('q8_antagonist_present', d.q8_obstacle.antagonist_present);
+  addRow('q9_viewer_care', d.q9_viewer_care.score, d.q9_viewer_care.evidence);
+  addRow('q10_peak_moment', d.q10_peak_moment.score, d.q10_peak_moment.evidence);
+  addRow('q10a_emotional_peak', d.q10a_emotional_peak.score, d.q10a_emotional_peak.evidence);
+  addRow('q11_resolution_type', d.q11_resolution_type.value, d.q11_resolution_type.evidence);
+  addRow('q12_resolution_locus', d.q12_resolution_locus.value, d.q12_resolution_locus.evidence);
+  addRow('q13_tone', d.q13_tone.value === 'Other' ? d.q13_tone.other : d.q13_tone.value, d.q13_tone.evidence);
+  addRow('q14_brand_role', d.q14_brand_role.value, d.q14_brand_role.evidence);
+  addRow('q15_brand_narrative_position', d.q15_brand_narrative_position.values.join('|'), d.q15_brand_narrative_position.evidence);
+  addRow('q16_brand_swap_a', d.q16_brand_swap_a.value, d.q16_brand_swap_a.evidence);
+  addRow('q17_brand_swap_b', d.q17_brand_swap_b.value, d.q17_brand_swap_b.evidence);
+  addRow('q17_derived_d2_tier', d.q17_brand_swap_b.derived_d2_tier);
+  addRow('q18_brand_dimension', d.q18_brand_dimension.values.join('|'), d.q18_brand_dimension.evidence);
+  addRow('q19_communication_mode', d.q19_communication_mode.value, d.q19_communication_mode.evidence);
+  addRow('q20_verbal_speaker', d.q20_verbal_speaker.value, d.q20_verbal_speaker.evidence);
+  addRow('q21_cultural_elements', d.q21_cultural_elements.values.join('|'), d.q21_cultural_elements.evidence);
+  addRow('q22_prior_knowledge', d.q22_prior_knowledge_requirement.value, d.q22_prior_knowledge_requirement.evidence);
+  addRow('q23_cultural_ref_type', d.q23_cultural_reference_type.values.join('|'), d.q23_cultural_reference_type.evidence);
+  addRow('q24_cultural_ref_load', d.q24_cultural_reference_load.score, d.q24_cultural_reference_load.evidence);
+  addRow('q25_visual_unusualness', d.q25_visual_unusualness.score, d.q25_visual_unusualness.evidence);
+  addRow('q26_visual_category_diff', d.q26_visual_category_difference.score, d.q26_visual_category_difference.evidence);
+  addRow('q28_first_5_seconds', d.q28_first_5_seconds.values.join('|'), d.q28_first_5_seconds.evidence);
+  addRow('q29_message_clarity', d.q29_message_clarity.value, d.q29_message_clarity.evidence);
+  addRow('q30_audience_insight', d.q30_audience_insight.score, d.q30_audience_insight.evidence);
+  addRow('q30a_target_specificity', d.q30a_target_specificity.score, d.q30a_target_specificity.evidence);
+  addRow('q31_in_group', d.q31_in_group.score, d.q31_in_group.evidence);
+  addRow('q32_out_group', d.q32_out_group.score, d.q32_out_group.evidence);
+  addRow('q33_group_breadth', d.q33_group_breadth.value, d.q33_group_breadth.evidence);
+  addRow('q34_group_framing', d.q34_group_framing.value, d.q34_group_framing.evidence);
+  addRow('q35_interpretive_work', d.q35_interpretive_work.score, d.q35_interpretive_work.evidence);
+  addRow('q35a_brand_thinking_moment', d.q35a_brand_thinking_moment.value, d.q35a_brand_thinking_moment.evidence);
+  addRow('q36_brand_differentiators', d.q36_brand_differentiators.values.join('|'), d.q36_brand_differentiators.evidence);
+  addRow('q37_benefit_clarity', d.q37_benefit_clarity.score, d.q37_benefit_clarity.evidence);
+  addRow('q38_benefit_type', d.q38_benefit_type.values.join('|'), d.q38_benefit_type.evidence);
+  addRow('q39_benefit_framing', d.q39_benefit_framing.value, d.q39_benefit_framing.evidence);
+  addRow('q40_cta', d.q40_cta.value, d.q40_cta.evidence);
+  addRow('q41_pov', d.q41_pov.value, d.q41_pov.evidence);
+  addRow('q42_pov_boldness', d.q42_pov_boldness.value, d.q42_pov_boldness.evidence);
+  addRow('q43_pov_centrality', d.q43_pov_centrality.score, d.q43_pov_centrality.evidence);
+  addRow('q44_lifestyle_cues', d.q44_lifestyle_cues.value, d.q44_lifestyle_cues.evidence);
+  addRow('q45_lifestyle_description', d.q45_lifestyle_description);
+  addRow('q46_lifestyle_group_type', d.q46_lifestyle_group_type.values.join('|'), d.q46_lifestyle_group_type.evidence);
+  addRow('q47_minority_audience', d.q47_minority_audience.value, d.q47_minority_audience.evidence);
+  addRow('q48_minority_accessibility', d.q48_minority_accessibility.value, d.q48_minority_accessibility.evidence);
+  addRow('q49_dominant_strategy', d.q49_dominant_strategy.value, d.q49_dominant_strategy.evidence);
+  addRow('q50_brand_product_focus', d.q50_brand_product_focus.value, d.q50_brand_product_focus.evidence);
+
+  const csv = rows.map(r => r.map(cell => '"' + String(cell).replace(/"/g,'""') + '"').join(',')).join('\r\n');
+  const fname = (d.metadata.ad_id || 'qre') + '_' + (d.metadata.date || today()) + '.csv';
+  downloadFile(csv, fname, 'text/csv');
+}
+
+function downloadFile(content, name, type) {
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([content], {type}));
+  a.download = name;
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+
+function today() { return new Date().toISOString().slice(0,10); }
+
+// ─── AUTO-SAVE ────────────────────────────────────────────────────────────────
+let saveTimer;
+function autoSave() {
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(() => {
+    try {
+      const key = 'qre_' + (getText('ad_id') || 'draft');
+      localStorage.setItem(key, JSON.stringify(buildJSON()));
+      localStorage.setItem('qre_last_key', key);
+      const ind = document.getElementById('saveInd');
+      ind.textContent = '● saved';
+      ind.className = 'save-indicator saved';
+      setTimeout(() => { ind.textContent = '● auto-saved'; }, 1500);
+    } catch(e) {}
+  }, 800);
+}
+
+function clearForm() {
+  if (!confirm('Clear all fields? This cannot be undone.')) return;
+  document.querySelectorAll('input[type=text], input[type=date], textarea').forEach(e => e.value = '');
+  document.querySelectorAll('input[type=radio], input[type=checkbox]').forEach(e => e.checked = false);
+  document.querySelectorAll('.opt.sel').forEach(e => e.classList.remove('sel'));
+  document.getElementById('elements-list').innerHTML = '';
+  elementCount = 0;
+  document.getElementById('q17-derived').className = 'derived';
+  updateConditionals();
+}
+
+// ─── OPT VISUAL FEEDBACK ──────────────────────────────────────────────────────
+function initOptListeners() {
+  document.querySelectorAll('.opt').forEach(opt => {
+    opt.addEventListener('click', function() {
+      const inp = this.querySelector('input');
+      if (!inp) return;
+      if (inp.type === 'radio') {
+        document.querySelectorAll(`input[name="${inp.name}"]`).forEach(r => {
+          r.closest('.opt')?.classList.remove('sel');
+        });
+        this.classList.add('sel');
+      } else {
+        this.classList.toggle('sel', inp.checked);
+      }
+    });
+  });
+}
+
+// ─── INIT ─────────────────────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', () => {
+  buildScales();
+  initOptListeners();
+
+  // Convert evidence placeholder text into always-visible hint text above each textarea
+  document.querySelectorAll('.evid textarea').forEach(ta => {
+    if (!ta.placeholder) return;
+    const hint = document.createElement('div');
+    hint.className = 'evid-hint';
+    hint.textContent = ta.placeholder;
+    ta.placeholder = '';
+    ta.parentElement.insertBefore(hint, ta);
+  });
+
+  // Set today's date
+  document.getElementById('code_date').value = today();
+
+  // Wire all inputs to autoSave + conditionals
+  document.addEventListener('change', () => { updateConditionals(); autoSave(); });
+  document.addEventListener('input', autoSave);
+
+  // Q13 Other trigger
+  document.querySelectorAll('input[name="q13"]').forEach(r => {
+    r.addEventListener('change', updateConditionals);
+  });
+
+  updateConditionals();
+});
+</script>
+</body>
+</html>
