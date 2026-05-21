@@ -1337,43 +1337,52 @@ function getElementCount() {
 }
 
 // ─── CONDITIONAL VISIBILITY ───────────────────────────────────────────────────
+// Toggles a card AND its adjacent evid box together
+function toggleCard(id, show) {
+  const card = document.getElementById(id);
+  if (!card) return;
+  card.classList.toggle('hidden', !show);
+  const evid = card.nextElementSibling;
+  if (evid?.classList.contains('evid')) evid.classList.toggle('hidden', !show);
+}
+
 function updateConditionals() {
   // Q4: show if any elements exist
   const hasElements = getElementCount() > 0;
-  document.getElementById('card-q4').classList.toggle('hidden', !hasElements);
+  toggleCard('card-q4', hasElements);
 
   // Q20: show if Q19 = Verbally
   const q19 = getRadio('q19');
-  document.getElementById('card-q20').classList.toggle('hidden', q19 !== 'Verbally');
+  toggleCard('card-q20', q19 === 'Verbally');
 
   // Q22–Q24: show if Q21 has cultural element (not "None of the above" only)
   const q21vals = getCheckboxes('q21');
   const hasCultural = q21vals.some(v => v !== 'None of the above');
-  document.getElementById('card-q22').classList.toggle('hidden', !hasCultural);
-  document.getElementById('card-q23').classList.toggle('hidden', !hasCultural);
-  document.getElementById('card-q24').classList.toggle('hidden', !hasCultural);
+  toggleCard('card-q22', hasCultural);
+  toggleCard('card-q23', hasCultural);
+  toggleCard('card-q24', hasCultural);
 
   // Q33, Q34: show if Q31 >= 1
   const q31 = getScaleVal('q31');
   const showQ33Q34 = q31 !== null && q31 >= 1;
-  document.getElementById('card-q33').classList.toggle('hidden', !showQ33Q34);
-  document.getElementById('card-q34').classList.toggle('hidden', !showQ33Q34);
+  toggleCard('card-q33', showQ33Q34);
+  toggleCard('card-q34', showQ33Q34);
 
   // Q42, Q43: show if Q41 = Yes or Partial
   const q41 = getRadio('q41');
   const showPOV = q41 === 'Yes' || q41 === 'Partial';
-  document.getElementById('card-q42').classList.toggle('hidden', !showPOV);
-  document.getElementById('card-q43').classList.toggle('hidden', !showPOV);
+  toggleCard('card-q42', showPOV);
+  toggleCard('card-q43', showPOV);
 
   // Q45, Q46: show if Q44 != Absent
   const q44 = getRadio('q44');
   const showLifestyle = q44 && q44 !== 'Absent';
-  document.getElementById('card-q45').classList.toggle('hidden', !showLifestyle);
-  document.getElementById('card-q46').classList.toggle('hidden', !showLifestyle);
+  toggleCard('card-q45', showLifestyle);
+  toggleCard('card-q46', showLifestyle);
 
   // Q48: show if Q47 = Yes
   const q47 = getRadio('q47');
-  document.getElementById('card-q48').classList.toggle('hidden', q47 !== 'Yes');
+  toggleCard('card-q48', q47 === 'Yes');
 
   // Q13 other
   const q13 = getRadio('q13');
