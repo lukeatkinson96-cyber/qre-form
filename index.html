@@ -184,7 +184,7 @@ textarea{min-height:68px}
     </div>
   </div>
 </div>
-  <div class="evid"><div class="evid-label">Required Evidence</div><textarea id="q4-evid" placeholder="Name the pivotal element and explain which mechanism(s) drive it and why — one line per mechanism."></textarea></div>
+  <div class="evid"><div class="evid-label">Required Evidence</div><div style="display:flex;gap:10px;align-items:flex-start;margin-bottom:6px"><div style="flex:0 0 auto"><div style="font-size:11px;color:#64748b;margin-bottom:4px">Timestamp</div><input type="text" id="q4-ts" placeholder="0:00" style="width:72px"></div><div style="flex:1"><div style="font-size:11px;color:#64748b;margin-bottom:4px">Notes</div><textarea id="q4-evid" placeholder="Name the pivotal element and explain which mechanism(s) drive it and why — one line per mechanism."></textarea></div></div></div>
 
 <!-- SECTION 2: NARRATIVE STRUCTURE -->
 <div class="section-title">Narrative Structure</div>
@@ -1453,7 +1453,7 @@ function buildJSON() {
     },
     q1_unexpected_elements: elements,
     q1_element_count: elements.length,
-    q4_dramatic_tension: { mechanisms: getCheckboxes('q4'), evidence: getText('q4-evid') },
+    q4_dramatic_tension: { mechanisms: getCheckboxes('q4'), timestamp: getText('q4-ts'), evidence: getText('q4-evid') },
     q5_character_structure: { value: getRadio('q5'), evidence: getText('q5-evid') },
     q5a_protagonist_clarity: { value: getRadio('q5a'), evidence: getText('q5a-evid') },
     q6_protagonist_goal: { value: getRadio('q6'), evidence: getText('q6-evid') },
@@ -1564,6 +1564,7 @@ function downloadCSV() {
     'exported_at': 'Exported At',
     'q1_element_count': 'Q1: Number of unexpected/attention-grabbing elements',
     'q4_dramatic_tension': 'Q2: How is dramatic tension created?',
+    'q4_dramatic_tension_ts': 'Q2: Dramatic tension — timestamp',
     'q5_character_structure': 'Q3: Character structure',
     'q5a_protagonist_clarity': 'Q3a: Protagonist clarity',
     'q6_protagonist_goal': 'Q4: Is the protagonist\'s goal clear?',
@@ -1646,6 +1647,7 @@ function downloadCSV() {
     addRow(`q1_el${n}_pivotal`, el.pivotal);
   });
   addRow('q4_dramatic_tension', d.q4_dramatic_tension.mechanisms.join('|'), d.q4_dramatic_tension.evidence);
+  addRow('q4_dramatic_tension_ts', d.q4_dramatic_tension.timestamp);
   addRow('q5_character_structure', d.q5_character_structure.value, d.q5_character_structure.evidence);
   addRow('q5a_protagonist_clarity', d.q5a_protagonist_clarity.value, d.q5a_protagonist_clarity.evidence);
   addRow('q6_protagonist_goal', d.q6_protagonist_goal.value, d.q6_protagonist_goal.evidence);
@@ -1821,6 +1823,7 @@ function restoreForm() {
     // Evidence textareas
     const evidMap = {
       'q4-evid': d.q4_dramatic_tension?.evidence,
+      'q4-ts': d.q4_dramatic_tension?.timestamp,
       'q5-evid': d.q5_character_structure?.evidence,
       'q5a-evid': d.q5a_protagonist_clarity?.evidence,
       'q6-evid': d.q6_protagonist_goal?.evidence,
