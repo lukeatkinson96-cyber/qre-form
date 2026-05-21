@@ -751,7 +751,7 @@ textarea{min-height:68px}
     </div>
   </div>
 </div>
-  <div class="evid"><div class="evid-label">Required Evidence</div><textarea id="q33-evid" placeholder="Describe who is in the in-group (e.g. who they are, what they look like, what they value) and who would fall outside it."></textarea></div>
+  <div class="evid"><div class="evid-label">Required Evidence</div><textarea id="q33-evid"></textarea></div>
 
 <!-- Q34 (conditional: Q31 >= 1) -->
 <div class="card hidden" id="card-q34">
@@ -771,7 +771,7 @@ textarea{min-height:68px}
     </div>
   </div>
 </div>
-  <div class="evid"><div class="evid-label">Required Evidence</div><textarea id="q34-evid" placeholder="Describe how the in-group is portrayed — is it warm, aspirational, celebratory, cautionary? Note the specific cues (music, lighting, performance) that signal the framing."></textarea></div>
+  <div class="evid"><div class="evid-label">Required Evidence</div><textarea id="q34-evid"></textarea></div>
 
 <!-- SECTION 10: THINKING & DIFFERENTIATION -->
 <div class="section-title">Thinking &amp; Differentiation</div>
@@ -1557,9 +1557,68 @@ function downloadJSON() {
 // ─── EXPORT CSV ───────────────────────────────────────────────────────────────
 function downloadCSV() {
   const d = buildJSON();
-  const rows = [['field','value','evidence']];
+  const LABELS = {
+    'ad_id': 'Ad ID',
+    'coder_name': 'Coder Name',
+    'date': 'Date',
+    'exported_at': 'Exported At',
+    'q1_element_count': 'Q1: Number of unexpected/attention-grabbing elements',
+    'q4_dramatic_tension': 'Q2: How is dramatic tension created?',
+    'q5_character_structure': 'Q3: Character structure',
+    'q5a_protagonist_clarity': 'Q3a: Protagonist clarity',
+    'q6_protagonist_goal': 'Q4: Is the protagonist\'s goal clear?',
+    'q7_stakes': 'Q5: What are the stakes?',
+    'q8_obstacle_score': 'Q6: Obstacle/conflict strength (0–3)',
+    'q8_antagonist_present': 'Q6: Antagonist present?',
+    'q9_viewer_care': 'Q7: Viewer investment in outcome (0–3)',
+    'q10_peak_moment': 'Q8: Peak dramatic moment strength (0–3)',
+    'q10a_emotional_peak': 'Q8a: Emotional peak type/intensity (0–3)',
+    'q11_resolution_type': 'Q9: How is the story resolved?',
+    'q12_resolution_locus': 'Q10: Where does the resolution occur?',
+    'q13_tone': 'Q11: Overall tone',
+    'q14_brand_role': 'Q12: Role of brand in the narrative',
+    'q15_brand_narrative_position': 'Q13: Where does the brand appear in the narrative?',
+    'q16_brand_swap_a': 'Q14a: How much would swapping the brand change the story?',
+    'q17_brand_swap_b': 'Q14b: How much would swapping the brand change the execution?',
+    'q17_derived_d2_tier': 'Q14b: Derived brand integration tier',
+    'q18_brand_dimension': 'Q15: Which brand dimensions are communicated?',
+    'q19_communication_mode': 'Q16: How is the brand message communicated?',
+    'q20_verbal_speaker': 'Q17: Who delivers the verbal message?',
+    'q21_cultural_elements': 'Q18: Cultural/contextual elements present',
+    'q22_prior_knowledge': 'Q19: Does the ad require prior knowledge to make sense?',
+    'q23_cultural_ref_type': 'Q20: Type of cultural reference',
+    'q24_cultural_ref_load': 'Q21: Cultural reference load (0–3)',
+    'q25_visual_unusualness': 'Q22: Visual unusualness (0–3)',
+    'q26_visual_category_diff': 'Q23: Visual difference from category norms (0–3)',
+    'q28_first_5_seconds': 'Q24: What appears in the first 5 seconds?',
+    'q29_message_clarity': 'Q25: Clarity of main message',
+    'q30_audience_insight': 'Q26: Audience insight specificity (0–3)',
+    'q30a_target_specificity': 'Q26a: Target audience specificity (0–3)',
+    'q31_in_group': 'Q27: Sense of "us" / in-group (0–3)',
+    'q32_out_group': 'Q28: Sense of "them" / out-group (0–3)',
+    'q33_group_breadth': 'Q29: Breadth of in-group depicted',
+    'q34_group_framing': 'Q30: How is the in-group framed?',
+    'q35_interpretive_work': 'Q31: Interpretive work required (0–3)',
+    'q35a_brand_thinking_moment': 'Q31a: Does the ad prompt thinking about the brand?',
+    'q36_brand_differentiators': 'Q32: Brand differentiators communicated',
+    'q37_benefit_clarity': 'Q33: Benefit clarity (0–3)',
+    'q38_benefit_type': 'Q34: Type of benefit communicated',
+    'q39_benefit_framing': 'Q35: How is the benefit framed?',
+    'q40_cta': 'Q36: Call to action present?',
+    'q41_pov': 'Q37: Does the ad express a point of view?',
+    'q42_pov_boldness': 'Q38: How bold is the point of view?',
+    'q43_pov_centrality': 'Q39: Centrality of point of view (0–3)',
+    'q44_lifestyle_cues': 'Q40: Lifestyle cues present?',
+    'q45_lifestyle_description': 'Q41: Describe the lifestyle depicted',
+    'q46_lifestyle_group_type': 'Q42: Type of lifestyle group signalled',
+    'q47_minority_audience': 'Q43: Minority audience targeted?',
+    'q48_minority_accessibility': 'Q44: Minority accessibility approach',
+    'q49_dominant_strategy': 'Q45: Dominant creative strategy',
+    'q50_brand_product_focus': 'Q46: Brand or product focus',
+  };
+  const rows = [['field','question','value','evidence']];
   function addRow(key, val, evid) {
-    rows.push([key, val == null ? '' : String(val), evid || '']);
+    rows.push([key, LABELS[key] || key, val == null ? '' : String(val), evid || '']);
   }
   addRow('ad_id', d.metadata.ad_id);
   addRow('coder_name', d.metadata.coder_name);
@@ -1568,6 +1627,16 @@ function downloadCSV() {
   addRow('q1_element_count', d.q1_element_count);
   d.q1_unexpected_elements.forEach((el, i) => {
     const n = i + 1;
+    const elLabels = {
+      [`q1_el${n}_description`]: `Q1 Element ${n}: Description`,
+      [`q1_el${n}_timestamp`]: `Q1 Element ${n}: Timestamp`,
+      [`q1_el${n}_classification`]: `Q1 Element ${n}: Classification`,
+      [`q1_el${n}_classification_other`]: `Q1 Element ${n}: Classification (other)`,
+      [`q1_el${n}_humorous`]: `Q1 Element ${n}: Humorous?`,
+      [`q1_el${n}_severity`]: `Q1 Element ${n}: Severity`,
+      [`q1_el${n}_pivotal`]: `Q1 Element ${n}: Pivotal?`,
+    };
+    Object.assign(LABELS, elLabels);
     addRow(`q1_el${n}_description`, el.description);
     addRow(`q1_el${n}_timestamp`, el.timestamp);
     addRow(`q1_el${n}_classification`, el.classification.join('|'));
