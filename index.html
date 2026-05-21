@@ -1531,7 +1531,8 @@ async function submitForm() {
     // no-cors means we can't read the response, but if no error was thrown it went through
     status.className = 'ok';
     status.textContent = '✓ Submitted successfully';
-    btn.textContent = 'Submitted ✓';
+    btn.textContent = 'Submit responses';
+    btn.disabled = false;
   } catch (err) {
     status.className = 'err';
     status.textContent = '✗ Submission failed — please download your CSV as a backup.';
