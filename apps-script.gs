@@ -96,6 +96,7 @@ function getHeaders() {
     'q48_minority_accessibility',
     'q49_dominant_strategy', 'q49_evidence',
     'q50_brand_product_focus', 'q50_evidence',
+    'confidence_scores',
   ];
 }
 
@@ -168,5 +169,6 @@ function buildRow(d) {
     v(d.q48_minority_accessibility.value),
     v(d.q49_dominant_strategy.value),           v(d.q49_dominant_strategy.evidence),
     v(d.q50_brand_product_focus.value),         v(d.q50_brand_product_focus.evidence),
+    JSON.stringify(d.confidence_scores || {}),
   ];
 }

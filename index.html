@@ -107,6 +107,19 @@ textarea{min-height:68px}
 /* Other specify */
 .other-field{margin-top:6px;display:none}
 .other-field.show{display:block}
+/* Confidence row */
+.conf-row{display:flex;align-items:center;gap:6px;margin-top:14px;padding-top:10px;border-top:1px solid #f1f5f9}
+.conf-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#94a3b8;flex-shrink:0;margin-right:2px}
+.conf-radio{display:none}
+.conf-radio+label{padding:3px 10px;border-radius:20px;font-size:11px;font-weight:500;cursor:pointer;border:1.5px solid transparent;transition:all .1s;user-select:none;white-space:nowrap}
+.conf-radio+label.conf-high{border-color:#d1fae5;color:#065f46;background:#f0fdf4}
+.conf-radio+label.conf-med{border-color:#fed7aa;color:#92400e;background:#fff7ed}
+.conf-radio+label.conf-low{border-color:#fecaca;color:#991b1b;background:#fef2f2}
+.conf-radio+label.conf-na{border-color:#bfdbfe;color:#1e40af;background:#eff6ff}
+.conf-radio:checked+label.conf-high{background:#10b981;border-color:#10b981;color:white}
+.conf-radio:checked+label.conf-med{background:#f59e0b;border-color:#f59e0b;color:white}
+.conf-radio:checked+label.conf-low{background:#ef4444;border-color:#ef4444;color:white}
+.conf-radio:checked+label.conf-na{background:#3b82f6;border-color:#3b82f6;color:white}
 @media(max-width:600px){.meta-grid{grid-template-columns:1fr}.el-row{grid-template-columns:1fr}.scale{flex-wrap:wrap}.scale-item{flex:0 0 calc(33% - 3px)}}
 </style>
 </head>
@@ -1503,7 +1516,17 @@ function buildJSON() {
     q48_minority_accessibility: { value: getRadio('q48'), evidence: getText('q48-evid') },
     q49_dominant_strategy: { value: getRadio('q49'), evidence: getText('q49-evid') },
     q50_brand_product_focus: { value: getRadio('q50'), evidence: getText('q50-evid') },
+    confidence_scores: getConfidenceScores(),
   };
+}
+
+function getConfidenceScores() {
+  const scores = {};
+  document.querySelectorAll('.conf-radio:checked').forEach(inp => {
+    const q = inp.name.replace('conf-', ''); // e.g. "q4", "q5a"
+    scores[q] = inp.value;
+  });
+  return scores;
 }
 
 // ─── SUBMIT TO GOOGLE SHEETS ──────────────────────────────────────────────────
@@ -1617,9 +1640,16 @@ function downloadCSV() {
     'q49_dominant_strategy': 'Q49: Dominant creative strategy',
     'q50_brand_product_focus': 'Q50: Brand or product focus',
   };
-  const rows = [['field','question','value','evidence']];
+  const conf = d.confidence_scores || {};
+  // derive short q-key from field name (e.g. "q4_dramatic_tension" → "q4")
+  function confKey(field) {
+    const m = field.match(/^(q\d+[a-z]?)/);
+    return m ? m[1] : null;
+  }
+  const rows = [['field','question','value','evidence','confidence']];
   function addRow(key, val, evid) {
-    rows.push([key, LABELS[key] || key, val == null ? '' : String(val), evid || '']);
+    const ck = confKey(key);
+    rows.push([key, LABELS[key] || key, val == null ? '' : String(val), evid || '', ck ? (conf[ck] || '') : '']);
   }
   addRow('ad_id', d.metadata.ad_id);
   addRow('coder_name', d.metadata.coder_name);
@@ -1877,6 +1907,14 @@ function restoreForm() {
     setVal('q45-val', d.q45_lifestyle_description);
     setVal('q13-other-val', d.q13_tone?.other);
 
+    // Confidence scores
+    if (d.confidence_scores) {
+      Object.entries(d.confidence_scores).forEach(([q, val]) => {
+        const el = document.querySelector(`input[name="conf-${q}"][value="${CSS.escape(val)}"]`);
+        if (el) el.checked = true;
+      });
+    }
+
     // D2 derivation
     deriveD2();
     updateConditionals();
@@ -1934,8 +1972,31 @@ function initOptListeners() {
 }
 
 // ─── INIT ─────────────────────────────────────────────────────────────────────
+function injectConfidenceRows() {
+  let uid = 0;
+  document.querySelectorAll('.card').forEach(card => {
+    const qSpan = card.querySelector('.q-num');
+    if (!qSpan) return;
+    // derive q-key from display label: "Q5a" → "q5a", "Q10a" → "q10a"
+    const q = qSpan.textContent.trim().toLowerCase(); // e.g. "q5a"
+    const name = 'conf-' + q;
+    uid++;
+    const row = document.createElement('div');
+    row.className = 'conf-row';
+    row.innerHTML = `<span class="conf-label">Confidence</span>` +
+      ['High','Medium','Low','N/A'].map(v => {
+        const cls = v === 'High' ? 'conf-high' : v === 'Medium' ? 'conf-med' : v === 'Low' ? 'conf-low' : 'conf-na';
+        const id = `conf-${q}-${v.toLowerCase().replace('/','')}-${uid}`;
+        return `<input class="conf-radio" type="radio" name="${name}" id="${id}" value="${v}">` +
+               `<label class="${cls}" for="${id}">${v}</label>`;
+      }).join('');
+    card.appendChild(row);
+  });
+}
+
 document.addEventListener('DOMContentLoaded', () => {
   buildScales();
+  injectConfidenceRows();
   initOptListeners();
 
   // Convert evidence placeholder text into always-visible hint text above each textarea
